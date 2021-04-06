@@ -1,0 +1,10 @@
+{
+  "name": "MusoraChat",
+  "version": "0.0.1",
+  "private": true,
+  "peerDependencies": {
+    "react": "^16.13.1",
+    "react-native": "^0.63.3",
+    "stream-chat": "^3.7.0"
+  }
+}
