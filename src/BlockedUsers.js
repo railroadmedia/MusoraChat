@@ -85,7 +85,7 @@ export default class BlockedUsers extends React.Component {
     let { isDark } = this.props;
     return (
       <>
-        <View style={{ zIndex: 2, flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity
             onPress={this.props.onBack}
             style={{ padding: 10, flexDirection: 'row', alignItems: 'center' }}
@@ -93,11 +93,6 @@ export default class BlockedUsers extends React.Component {
             {arrowLeft({ height: 12, width: 12, fill: '#4D5356' })}
             <Text style={styles.titleText}>BLOCKED STUDENTS</Text>
           </TouchableOpacity>
-          <FloatingMenu
-            admin={this.props.admin}
-            ref={r => (this.floatingMenu = r)}
-            onParticipants={this.props.onParticipants}
-          />
         </View>
         {this.state.loading ? (
           <ActivityIndicator
@@ -139,6 +134,11 @@ export default class BlockedUsers extends React.Component {
             ref={r => (this.flatList = r?.getNativeScrollRef())}
           />
         )}
+        <FloatingMenu
+          admin={this.props.admin}
+          ref={r => (this.floatingMenu = r)}
+          onParticipants={this.props.onParticipants}
+        />
       </>
     );
   }
@@ -153,8 +153,7 @@ const setStyles = isDark =>
     },
     flatList: {
       flex: 1,
-      backgroundColor: isDark ? 'black' : 'white',
-      zIndex: 1
+      backgroundColor: isDark ? 'black' : 'white'
     },
     emptyListText: {
       padding: 10,

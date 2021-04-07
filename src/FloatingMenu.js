@@ -123,16 +123,13 @@ const setStyles = isDark =>
   StyleSheet.create({
     container: {
       alignItems: 'flex-end',
-      bottom: 0,
       position: 'absolute',
-      right: 0,
-      top: 0
+      right: 0
     },
     toggler: {
       alignItems: 'center',
-      aspectRatio: 1,
-      height: '100%',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      padding: 10
     },
     optionsList: {
       borderRadius: 10,

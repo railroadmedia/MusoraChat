@@ -93,7 +93,7 @@ export default class Participants extends React.Component {
     let { loading, loadingMore, onlineUsers } = this.state;
     return (
       <>
-        <View style={{ zIndex: 2, flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity
             onPress={this.props.onBack}
             style={{ padding: 10, flexDirection: 'row', alignItems: 'center' }}
@@ -105,12 +105,6 @@ export default class Participants extends React.Component {
             })}
             <Text style={styles.titleText}>PARTICIPANTS</Text>
           </TouchableOpacity>
-          <FloatingMenu
-            isDark={this.props.isDark}
-            admin={this.props.admin}
-            ref={r => (this.floatingMenu = r)}
-            onBlockedStudents={this.props.onBlockedStudents}
-          />
         </View>
         {loading ? (
           <ActivityIndicator
@@ -151,6 +145,12 @@ export default class Participants extends React.Component {
           />
         )}
         <Text style={styles.onlineUsers}>{onlineUsers} Online</Text>
+        <FloatingMenu
+          isDark={this.props.isDark}
+          admin={this.props.admin}
+          ref={r => (this.floatingMenu = r)}
+          onBlockedStudents={this.props.onBlockedStudents}
+        />
       </>
     );
   }
@@ -165,8 +165,7 @@ const setStyles = isDark =>
     },
     flatList: {
       flex: 1,
-      backgroundColor: isDark ? 'black' : 'white',
-      zIndex: 1
+      backgroundColor: isDark ? 'black' : 'white'
     },
     onlineUsers: {
       padding: 10,

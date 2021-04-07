@@ -147,6 +147,7 @@ export default class MusoraChat extends React.Component {
 
   renderFLItem = ({ item }, pinned) => (
     <ListItem
+      reversed={!isiOS}
       isDark={this.props.isDark}
       appColor={this.props.appColor}
       key={item.id}
@@ -322,22 +323,6 @@ export default class MusoraChat extends React.Component {
                   </Text>
                 </TouchableOpacity>
               ))}
-              <FloatingMenu
-                isDark={isDark}
-                appColor={appColor}
-                ref={r => (this.floatingMenu = r)}
-                admin={this.me?.role === 'admin'}
-                onClearAllQuestions={
-                  tabIndex
-                    ? () =>
-                        this.questionsChannel.state.messages.map(m =>
-                          this.client.deleteMessage(m.id).catch(e => {})
-                        )
-                    : undefined
-                }
-                onParticipants={() => this.setState({ showParticipants: true })}
-                onBlockedStudents={() => this.setState({ showBlocked: true })}
-              />
             </View>
             {pinned?.map(item => this.renderFLItem({ item }, true))}
             <FlatList
@@ -399,6 +384,22 @@ export default class MusoraChat extends React.Component {
               </Text>
               <Text style={styles.chatEventsInfo}>{this.formatTypers()}</Text>
             </View>
+            <FloatingMenu
+              isDark={isDark}
+              appColor={appColor}
+              ref={r => (this.floatingMenu = r)}
+              admin={this.me?.role === 'admin'}
+              onClearAllQuestions={
+                tabIndex
+                  ? () =>
+                      this.questionsChannel.state.messages.map(m =>
+                        this.client.deleteMessage(m.id).catch(e => {})
+                      )
+                  : undefined
+              }
+              onParticipants={() => this.setState({ showParticipants: true })}
+              onBlockedStudents={() => this.setState({ showBlocked: true })}
+            />
             <Modal
               onRequestClose={() => this.setState({ keyboardVisible: false })}
               onShow={() =>
@@ -455,14 +456,12 @@ const setStyles = isDark =>
       backgroundColor: isDark ? '#00101D' : '#F2F3F5'
     },
     tabMenu: {
-      zIndex: 2,
       flexDirection: 'row',
       alignItems: 'center'
     },
     flatList: {
       flex: 1,
       backgroundColor: isDark ? 'black' : 'white',
-      zIndex: 1,
       borderTopWidth: isDark ? 0 : 2,
       borderBottomWidth: isDark ? 0 : 2,
       borderColor: 'rgba(0,0,0,.1)'

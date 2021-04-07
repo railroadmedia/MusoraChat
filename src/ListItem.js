@@ -2,7 +2,6 @@ import React from 'react';
 import {
   Image,
   Modal,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -11,8 +10,7 @@ import {
 
 import { pin, vote, close } from './svgs';
 
-let styles,
-  isiOS = Platform.OS === 'ios';
+let styles;
 export default class ListItem extends React.Component {
   state = {
     answeredModalVisible: false,
@@ -94,6 +92,7 @@ export default class ListItem extends React.Component {
       own,
       isDark,
       pinned,
+      reversed,
       type
     } = this.props;
     let borderColor =
@@ -115,7 +114,7 @@ export default class ListItem extends React.Component {
               alignItems: center ? 'center' : 'flex-start',
               backgroundColor: pinned ? (isDark ? '#0C131B' : 'white') : ''
             },
-            isiOS ? {} : { scaleY: -1 }
+            reversed ? { scaleY: -1 } : {}
           ]}
           onPress={() => {
             this.props.onTap?.();
