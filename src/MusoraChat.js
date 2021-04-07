@@ -125,7 +125,7 @@ export default class MusoraChat extends React.Component {
         [`${ti ? 'questions' : 'chat'}Typers`]: Array.from(ti ? qt : ct)
       },
       () => {
-        if (this.fListY && ti)
+        if (this.fListY)
           if (type === 'message.new')
             this.flatList.scrollTo({
               y: this.itemHeight + this.fListY,
@@ -341,7 +341,7 @@ export default class MusoraChat extends React.Component {
             </View>
             {pinned?.map(item => this.renderFLItem({ item }, true))}
             <FlatList
-              inverted
+              inverted={isiOS}
               onScroll={({
                 nativeEvent: {
                   contentOffset: { y }
@@ -349,8 +349,8 @@ export default class MusoraChat extends React.Component {
               }) => (this.fListY = y >= 0 ? y : 0)}
               windowSize={10}
               data={messages}
-              style={styles.flatList}
-              initialNumToRender={5}
+              style={[styles.flatList, isiOS ? {} : { scaleY: -1 }]}
+              initialNumToRender={50}
               maxToRenderPerBatch={10}
               onEndReachedThreshold={0.01}
               removeClippedSubviews={true}

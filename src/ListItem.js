@@ -107,6 +107,7 @@ export default class ListItem extends React.Component {
         <TouchableOpacity
           onLayout={this.props.onLayout}
           style={{
+            scaleY: -1,
             padding: 10,
             flexDirection: 'row',
             alignItems: center ? 'center' : 'flex-start',
@@ -161,7 +162,7 @@ export default class ListItem extends React.Component {
             <Text style={styles.displayName}>
               {item.user.displayName}
               {item.text && (
-                <Text style={{ fontFamily: 'OpenSans' }}>
+                <Text style={{ fontFamily: 'OpenSans', fontWeight: 'normal' }}>
                   {`\n`}
                   {item.text}
                 </Text>
