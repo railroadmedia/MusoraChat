@@ -34,7 +34,6 @@ export default class MusoraChat extends React.Component {
     loadingMore: false,
     questionsTypers: [],
     questionsViewers: 0,
-    reloadingFlatList: false,
     showBlocked: false,
     showParticipants: false,
     tabIndex: 0
@@ -230,7 +229,6 @@ export default class MusoraChat extends React.Component {
       loading,
       loadingMore,
       questionsViewers,
-      reloadingFlatList,
       showBlocked,
       showParticipants,
       tabIndex
@@ -270,17 +268,9 @@ export default class MusoraChat extends React.Component {
             admin={this.me?.role === 'admin'}
             onlineUsers={tabIndex ? questionsViewers : chatViewers}
             channel={this[tabIndex ? 'questionsChannel' : 'chatChannel']}
-            onBack={() =>
-              this.setState({ showParticipants: false }, () =>
-                setTimeout(() => this.setState({ reloadingFlatList: false }), 0)
-              )
-            }
+            onBack={() => this.setState({ showParticipants: false })}
             onBlockedStudents={() =>
-              this.setState({
-                reloadingFlatList: true,
-                showParticipants: false,
-                showBlocked: true
-              })
+              this.setState({ showParticipants: false, showBlocked: true })
             }
           />
         ) : showBlocked ? (
@@ -289,17 +279,9 @@ export default class MusoraChat extends React.Component {
             appColor={this.props.appColor}
             admin={this.me?.role === 'admin'}
             client={this.client}
-            onBack={() =>
-              this.setState({ showBlocked: false }, () =>
-                setTimeout(() => this.setState({ reloadingFlatList: false }), 0)
-              )
-            }
+            onBack={() => this.setState({ showBlocked: false })}
             onParticipants={() =>
-              this.setState({
-                reloadingFlatList: true,
-                showParticipants: true,
-                showBlocked: false
-              })
+              this.setState({ showParticipants: true, showBlocked: false })
             }
             onUnblockStudent={user => this.props.onToggleBlockStudent(user)}
           />
@@ -310,15 +292,8 @@ export default class MusoraChat extends React.Component {
                 <TouchableOpacity
                   key={t}
                   onPress={() =>
-                    this.setState(
-                      { tabIndex: i, reloadingFlatList: true },
-                      () => {
-                        this.floatingMenu?.close();
-                        setTimeout(
-                          () => this.setState({ reloadingFlatList: false }),
-                          0
-                        );
-                      }
+                    this.setState({ tabIndex: i }, () =>
+                      this.floatingMenu?.close()
                     )
                   }
                   style={{
@@ -352,47 +327,39 @@ export default class MusoraChat extends React.Component {
               ))}
             </View>
             {pinned?.map(item => this.renderFLItem({ item }, true))}
-            {reloadingFlatList ? (
-              <ActivityIndicator
-                size='large'
-                color={isDark ? 'white' : 'black'}
-                style={styles.activityIndicator}
-              />
-            ) : (
-              <FlatList
-                inverted={isiOS}
-                onScroll={({
-                  nativeEvent: {
-                    contentOffset: { y }
-                  }
-                }) => (this.fListY = y >= 0 ? y : 0)}
-                windowSize={10}
-                data={messages}
-                style={[styles.flatList, isiOS ? {} : { scaleY: -1 }]}
-                initialNumToRender={50}
-                maxToRenderPerBatch={10}
-                onEndReachedThreshold={0.01}
-                removeClippedSubviews={true}
-                keyboardShouldPersistTaps='handled'
-                renderItem={this.renderFLItem}
-                onEndReached={this.loadMore}
-                keyExtractor={item => item.id.toString()}
-                ListEmptyComponent={
-                  <Text style={styles.emptyListText}>
-                    {tabIndex ? 'No questions' : 'Say Hi!'}
-                  </Text>
+            <FlatList
+              inverted={isiOS}
+              onScroll={({
+                nativeEvent: {
+                  contentOffset: { y }
                 }
-                ListFooterComponent={
-                  <ActivityIndicator
-                    size='small'
-                    color={isDark ? 'white' : 'black'}
-                    animating={loadingMore}
-                    style={styles.activityIndicator}
-                  />
-                }
-                ref={r => (this.flatList = r?.getNativeScrollRef())}
-              />
-            )}
+              }) => (this.fListY = y >= 0 ? y : 0)}
+              windowSize={10}
+              data={messages}
+              style={[styles.flatList, isiOS ? {} : { scaleY: -1 }]}
+              initialNumToRender={1}
+              maxToRenderPerBatch={10}
+              onEndReachedThreshold={0.01}
+              removeClippedSubviews={true}
+              keyboardShouldPersistTaps='handled'
+              renderItem={this.renderFLItem}
+              onEndReached={this.loadMore}
+              keyExtractor={item => item.id.toString()}
+              ListEmptyComponent={
+                <Text style={styles.emptyListText}>
+                  {tabIndex ? 'No questions' : 'Say Hi!'}
+                </Text>
+              }
+              ListFooterComponent={
+                <ActivityIndicator
+                  size='small'
+                  color={isDark ? 'white' : 'black'}
+                  animating={loadingMore}
+                  style={styles.activityIndicator}
+                />
+              }
+              ref={r => (this.flatList = r?.getNativeScrollRef())}
+            />
             <TouchableOpacity
               onPress={() =>
                 this.setState(
@@ -432,15 +399,8 @@ export default class MusoraChat extends React.Component {
                       )
                   : undefined
               }
-              onParticipants={() =>
-                this.setState({
-                  showParticipants: true,
-                  reloadingFlatList: true
-                })
-              }
-              onBlockedStudents={() =>
-                this.setState({ showBlocked: true, reloadingFlatList: true })
-              }
+              onParticipants={() => this.setState({ showParticipants: true })}
+              onBlockedStudents={() => this.setState({ showBlocked: true })}
             />
             <Modal
               onRequestClose={() => this.setState({ keyboardVisible: false })}
