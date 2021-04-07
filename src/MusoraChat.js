@@ -4,6 +4,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Modal,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -12,6 +13,7 @@ import {
 } from 'react-native';
 
 import { StreamChat } from 'stream-chat';
+import AndroidKeyboardAdjust from 'react-native-android-keyboard-adjust';
 
 import FloatingMenu from './FloatingMenu';
 import Participants from './Participants';
@@ -20,7 +22,8 @@ import ListItem from './ListItem';
 
 import { sendMsg } from './svgs';
 
-let styles;
+let styles,
+  isiOS = Platform.OS === 'ios';
 const tabs = ['CHAT', 'QUESTIONS'];
 export default class MusoraChat extends React.Component {
   state = {
@@ -43,6 +46,7 @@ export default class MusoraChat extends React.Component {
   }
 
   componentDidMount() {
+    if (!isiOS) AndroidKeyboardAdjust.setAdjustPan();
     this.connectUser()
       .then(this.getChannels)
       .then(() => {
@@ -56,6 +60,7 @@ export default class MusoraChat extends React.Component {
   }
 
   componentWillUnmount() {
+    if (!isiOS) AndroidKeyboardAdjust.setAdjustResize();
     this.disconnectUser();
   }
 
@@ -395,9 +400,16 @@ export default class MusoraChat extends React.Component {
               <Text style={styles.chatEventsInfo}>{this.formatTypers()}</Text>
             </View>
             <Modal
+              onRequestClose={() => this.setState({ keyboardVisible: false })}
+              onShow={() =>
+                setTimeout(
+                  () => this.commentTextInput?.focus(),
+                  isiOS ? 0 : 100
+                )
+              }
+              supportedOrientations={['portrait', 'landscape']}
               transparent={true}
               visible={keyboardVisible}
-              onRequestClose={() => this.setState({ keyboardVisible: false })}
             >
               <TouchableOpacity
                 style={{ flex: 1, justifyContent: 'flex-end' }}
@@ -405,11 +417,10 @@ export default class MusoraChat extends React.Component {
               >
                 <KeyboardAvoidingView
                   style={{ flex: 1, justifyContent: 'flex-end' }}
-                  behavior={'padding'}
+                  behavior={isiOS ? 'padding' : ''}
                 >
                   <View style={styles.textInputContainer}>
                     <TextInput
-                      autoFocus={true}
                       multiline={true}
                       blurOnSubmit={true}
                       style={styles.textInput}

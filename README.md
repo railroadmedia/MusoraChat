@@ -3,6 +3,7 @@ This is a custom chat for musora apps.
 
 ## Libraries used
 * [stream-chat](https://github.com/GetStream/stream-chat-js)
+* [react-native-android-keyboard-adjust](https://github.com/zubricky/react-native-android-keyboard-adjust) (this is used on android for keeping the list under the keyboard)
 ## Installation
 ```
 npm i --save https://github.com/railroadmedia/MusoraChat.git

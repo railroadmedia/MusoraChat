@@ -5,6 +5,7 @@
   "peerDependencies": {
     "react": "^16.13.1",
     "react-native": "^0.63.3",
-    "stream-chat": "^3.7.0"
+    "stream-chat": "^3.7.0",
+    "react-native-android-keyboard-adjust": "^1.2.0"
   }
 }
