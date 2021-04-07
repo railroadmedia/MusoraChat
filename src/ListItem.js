@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Image,
   Modal,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -10,7 +11,8 @@ import {
 
 import { pin, vote, close } from './svgs';
 
-let styles;
+let styles,
+  isiOS = Platform.OS === 'ios';
 export default class ListItem extends React.Component {
   state = {
     answeredModalVisible: false,
@@ -106,13 +108,15 @@ export default class ListItem extends React.Component {
       <>
         <TouchableOpacity
           onLayout={this.props.onLayout}
-          style={{
-            scaleY: -1,
-            padding: 10,
-            flexDirection: 'row',
-            alignItems: center ? 'center' : 'flex-start',
-            backgroundColor: pinned ? (isDark ? '#0C131B' : 'white') : ''
-          }}
+          style={[
+            {
+              padding: 10,
+              flexDirection: 'row',
+              alignItems: center ? 'center' : 'flex-start',
+              backgroundColor: pinned ? (isDark ? '#0C131B' : 'white') : ''
+            },
+            isiOS ? {} : { scaleY: -1 }
+          ]}
           onPress={() => {
             this.props.onTap?.();
             if (admin && type === 'banned')
