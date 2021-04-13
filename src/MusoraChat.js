@@ -118,26 +118,15 @@ export default class MusoraChat extends React.Component {
     }
     if (type.match(/^(user.banned|user.unbanned|delete_user_messages)$/))
       await this.getChannels();
-    this.setState(
-      {
-        [`${ti ? 'questions' : 'chat'}Viewers`]:
-          watcher_count || (ti ? questionsViewers : chatViewers),
-        [`${ti ? 'questions' : 'chat'}Typers`]: Array.from(ti ? qt : ct)
-      },
-      () => {
-        if (this.fListY)
-          if (type === 'message.new')
-            this.flatList.scrollTo({
-              y: this.itemHeight + this.fListY,
-              animated: false
-            });
-          else if (type === 'message.deleted')
-            this.flatList.scrollTo({
-              y: this.fListY - this.itemHeight,
-              animated: false
-            });
-      }
-    );
+    if (this.fListY && type === 'message.new') {
+      let { messages } = this.chatChannel.state;
+      messages[messages.length - 1].new = true;
+    }
+    this.setState({
+      [`${ti ? 'questions' : 'chat'}Viewers`]:
+        watcher_count || (ti ? questionsViewers : chatViewers),
+      [`${ti ? 'questions' : 'chat'}Typers`]: Array.from(ti ? qt : ct)
+    });
   };
 
   disconnectUser = async () => {
@@ -147,11 +136,20 @@ export default class MusoraChat extends React.Component {
 
   renderFLItem = ({ item }, pinned) => (
     <ListItem
+      new={item.new}
       reversed={!isiOS}
       isDark={this.props.isDark}
       appColor={this.props.appColor}
       key={item.id}
-      onLayout={({ nativeEvent: ne }) => (this.itemHeight = ne.layout.height)}
+      onLayout={({ nativeEvent: ne }) => {
+        if (item.new) {
+          delete item.new;
+          this.flatList.scrollTo({
+            y: this.fListY + ne.layout.height,
+            animated: false
+          });
+        }
+      }}
       onTap={() => this.floatingMenu?.close?.()}
       own={this.me.displayName === item.user.displayName}
       admin={this.me?.role === 'admin'}

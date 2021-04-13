@@ -12,18 +12,19 @@ import { pin, vote, close } from './svgs';
 
 let styles;
 export default class ListItem extends React.Component {
-  state = {
-    answeredModalVisible: false,
-    blockModalVisible: false,
-    optionsModalVisible: false,
-    pinModalVisible: false,
-    removeModalVisible: false,
-    removeAllModalVisible: false
-  };
-
   constructor(props) {
     super(props);
     styles = setStyles(props.isDark);
+
+    this.state = {
+      position: props.new ? 'absolute' : 'relative',
+      answeredModalVisible: false,
+      blockModalVisible: false,
+      optionsModalVisible: false,
+      pinModalVisible: false,
+      removeModalVisible: false,
+      removeAllModalVisible: false
+    };
   }
 
   shouldComponentUpdate({ isDark }) {
@@ -95,6 +96,7 @@ export default class ListItem extends React.Component {
       reversed,
       type
     } = this.props;
+    let { position } = this.state;
     let borderColor =
       aln === 'edge'
         ? appColor
@@ -106,9 +108,14 @@ export default class ListItem extends React.Component {
     return (
       <>
         <TouchableOpacity
-          onLayout={this.props.onLayout}
+          onLayout={e => {
+            if (position === 'absolute')
+              this.setState({ position: 'relative' });
+            this.props.onLayout(e);
+          }}
           style={[
             {
+              position,
               padding: 10,
               flexDirection: 'row',
               alignItems: center ? 'center' : 'flex-start',
