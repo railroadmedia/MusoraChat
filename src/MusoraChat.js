@@ -118,7 +118,11 @@ export default class MusoraChat extends React.Component {
     }
     if (type.match(/^(user.banned|user.unbanned|delete_user_messages)$/))
       await this.getChannels();
-    if (this.fListY && type === 'message.new') {
+    if (
+      this.fListY &&
+      type === 'message.new' &&
+      user.id !== this.props.user.id
+    ) {
       let { messages } = this.chatChannel.state;
       messages[messages.length - 1].new = true;
     }
@@ -137,7 +141,7 @@ export default class MusoraChat extends React.Component {
   renderFLItem = ({ item }, pinned) => (
     <ListItem
       new={item.new}
-      reversed={!isiOS}
+      reversed={!isiOS && !pinned}
       isDark={this.props.isDark}
       appColor={this.props.appColor}
       key={item.id}
