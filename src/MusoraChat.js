@@ -190,12 +190,14 @@ export default class MusoraChat extends React.Component {
       this.state.tabIndex ? 'questionsChannel' : 'chatChannel'
     ]?.stopTyping();
     this.setState({ keyboardVisible: false });
-    if (text)
+    if (text) {
+      this.flatList?.scrollTo({ y: 0, animated: true });
       this[this.state.tabIndex ? 'questionsChannel' : 'chatChannel']
         ?.sendMessage({
           text
         })
         .catch(e => {});
+    }
   };
 
   formatTypers = () => {
