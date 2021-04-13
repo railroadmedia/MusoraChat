@@ -149,11 +149,11 @@ export default class ListItem extends React.Component {
           <View style={{ paddingHorizontal: 10, flex: 1 }}>
             {pinned && (
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                {pin({ width: 7, fill: '#4D5356' })}
+                {pin({ width: 9, fill: '#9EA1A6' })}
                 <Text
                   style={{
                     fontFamily: 'OpenSans',
-                    color: '#4D5356',
+                    color: '#9EA1A6',
                     fontSize: 10
                   }}
                 >
