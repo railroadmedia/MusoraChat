@@ -101,7 +101,7 @@ export default class MusoraChat extends React.Component {
     reaction
   }) => {
     if (type === 'health.check') return;
-    if (type.includes('reaction') && reaction.type !== 'vote') return;
+    if (type.includes('reaction') && reaction.type !== 'upvote') return;
     let {
       chatTypers,
       chatViewers,
@@ -195,7 +195,12 @@ export default class MusoraChat extends React.Component {
     this.commentTextInput?.clear();
     this[channel]?.stopTyping();
     if (this.state.comment && !user.banned) {
-      this[`${channel}PendingMsg`] = { user, text: this.state.comment, id: 1 };
+      this[`${channel}PendingMsg`] = {
+        user,
+        text: this.state.comment,
+        id: 1,
+        created_at: new Date()
+      };
       this.flatList?.scrollTo({ y: 0, animated: true });
       this[channel]?.sendMessage({ text: this.state.comment }).catch(e => {});
     }

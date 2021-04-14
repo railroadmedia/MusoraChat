@@ -192,7 +192,7 @@ export default class ListItem extends React.Component {
                 {vote({
                   width: 10,
                   height: 10,
-                  fill: item.own_reactions.some(r => r.type === 'upvote')
+                  fill: item.own_reactions?.some(r => r.type === 'upvote')
                     ? '#00BC75'
                     : isDark
                     ? 'white'
@@ -204,7 +204,7 @@ export default class ListItem extends React.Component {
                       ? isDark
                         ? 'black'
                         : 'white'
-                      : item.own_reactions.some(r => r.type === 'upvote')
+                      : item.own_reactions?.some(r => r.type === 'upvote')
                       ? '#00BC75'
                       : appColor,
                     paddingHorizontal: 5
