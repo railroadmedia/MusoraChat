@@ -118,8 +118,10 @@ export default class MusoraChat extends React.Component {
       if (type === 'typing.start') ct.add(user.displayName);
       if (type === 'typing.stop') ct.delete(user.displayName);
     }
-    if (type.match(/^(user.banned|user.unbanned|delete_user_messages)$/))
+    if (type.match(/^(user.banned|user.unbanned|delete_user_messages)$/)) {
       await this.getChannels();
+      this.client.user.banned = user.banned;
+    }
     if (type === 'message.new') {
       if (user.id !== this.props.user.id) {
         if (this.fListY) {
