@@ -186,19 +186,18 @@ export default class MusoraChat extends React.Component {
     />
   );
 
-  sendMessage = ({ nativeEvent: { text } }) => {
+  sendMessage = () => {
     this.commentTextInput?.clear();
     this[
       this.state.tabIndex ? 'questionsChannel' : 'chatChannel'
     ]?.stopTyping();
     this.setState({ keyboardVisible: false });
-    if (text) {
+    if (this.comment) {
       this.flatList?.scrollTo({ y: 0, animated: true });
       this[this.state.tabIndex ? 'questionsChannel' : 'chatChannel']
-        ?.sendMessage({
-          text
-        })
+        ?.sendMessage({ text: this.comment })
         .catch(e => {});
+      delete this.comment;
     }
   };
 
@@ -374,13 +373,19 @@ export default class MusoraChat extends React.Component {
               style={styles.saySomethingTOpacity}
             >
               <Text style={styles.placeHolderText}>
-                {tabIndex ? 'Ask a question' : 'Say something'}...
+                {this.comment ||
+                  `${tabIndex ? 'Ask a question' : 'Say something'}...`}
               </Text>
-              {sendMsg({
-                height: 12,
-                width: 12,
-                fill: isDark ? '#4D5356' : '#879097'
-              })}
+              <TouchableOpacity
+                onPress={this.sendMessage}
+                style={{ padding: 15 }}
+              >
+                {sendMsg({
+                  height: 12,
+                  width: 12,
+                  fill: isDark ? '#4D5356' : '#879097'
+                })}
+              </TouchableOpacity>
             </TouchableOpacity>
             <View
               style={{ flexDirection: 'row', justifyContent: 'space-between' }}
@@ -431,18 +436,30 @@ export default class MusoraChat extends React.Component {
                       multiline={true}
                       blurOnSubmit={true}
                       style={styles.textInput}
-                      onChangeText={() =>
+                      onChangeText={comment => {
+                        this.comment = comment;
                         this[
                           tabIndex ? 'questionsChannel' : 'chatChannel'
-                        ]?.keystroke()
-                      }
+                        ]?.keystroke();
+                      }}
                       placeholder={'Say something...'}
                       onSubmitEditing={this.sendMessage}
                       ref={r => (this.commentTextInput = r)}
                       keyboardAppearance={'dark'}
                       placeholderTextColor={isDark ? '#4D5356' : '#879097'}
                       returnKeyType={'send'}
+                      value={this.comment}
                     />
+                    <TouchableOpacity
+                      onPress={this.sendMessage}
+                      style={{ padding: 20 }}
+                    >
+                      {sendMsg({
+                        height: 12,
+                        width: 12,
+                        fill: isDark ? '#4D5356' : '#879097'
+                      })}
+                    </TouchableOpacity>
                   </View>
                 </KeyboardAvoidingView>
               </TouchableOpacity>
@@ -478,7 +495,6 @@ const setStyles = isDark =>
       color: isDark ? 'white' : 'black'
     },
     saySomethingTOpacity: {
-      padding: 15,
       margin: 10,
       borderRadius: 5,
       backgroundColor: isDark ? 'black' : 'white',
@@ -493,15 +509,19 @@ const setStyles = isDark =>
       fontFamily: 'OpenSans'
     },
     placeHolderText: {
+      paddingLeft: 15,
       color: isDark ? '#4D5356' : '#879097',
       fontFamily: 'OpenSans'
     },
     textInputContainer: {
-      padding: 15,
-      backgroundColor: isDark ? '#1E1E1E' : '#F2F3F5'
+      paddingLeft: 10,
+      flexDirection: 'row',
+      backgroundColor: isDark ? '#1E1E1E' : '#F2F3F5',
+      alignItems: 'center'
     },
     textInput: {
       padding: 10,
+      flex: 1,
       color: isDark ? 'white' : 'black',
       backgroundColor: isDark ? 'black' : 'white',
       borderRadius: 10
