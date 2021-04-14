@@ -8,7 +8,7 @@ import {
   View
 } from 'react-native';
 
-import { pin, vote, close } from './svgs';
+import { pin, vote, close, coach, team, edge, lifetime } from './svgs';
 
 let styles;
 export default class ListItem extends React.Component {
@@ -97,14 +97,29 @@ export default class ListItem extends React.Component {
       type
     } = this.props;
     let { position } = this.state;
-    let borderColor =
-      aln === 'edge'
-        ? appColor
-        : aln === 'team'
-        ? 'black'
-        : aln === 'lifetime'
-        ? '#07B3FF'
-        : '#FAA300';
+    let borderColor, userTagIcon;
+    switch (aln) {
+      case 'edge': {
+        borderColor = appColor;
+        userTagIcon = edge;
+        break;
+      }
+      case 'team': {
+        borderColor = 'black';
+        userTagIcon = team;
+        break;
+      }
+      case 'lifetime': {
+        borderColor = '#07B3FF';
+        userTagIcon = lifetime;
+        break;
+      }
+      case 'coach': {
+        borderColor = '#FAA300';
+        userTagIcon = coach;
+        break;
+      }
+    }
     return (
       <>
         <TouchableOpacity
@@ -149,9 +164,12 @@ export default class ListItem extends React.Component {
                 backgroundColor: borderColor,
                 position: 'absolute',
                 bottom: 0,
-                lineHeight: 5
+                lineHeight: 5,
+                alignItems: 'center'
               }}
-            />
+            >
+              {userTagIcon?.({ height: 5, fill: 'white' })}
+            </View>
           </View>
           <View style={{ paddingHorizontal: 10, flex: 1 }}>
             {pinned && (
