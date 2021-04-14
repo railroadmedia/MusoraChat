@@ -252,20 +252,36 @@ export default class MusoraChat extends React.Component {
         .slice()
         .reverse()
         ?.filter(m => m?.type !== 'deleted' && !m?.user.banned);
-      if (this[`${channel}PendingMsg`])
-        messages.unshift(this[`${channel}PendingMsg`]);
-
-      if (tabIndex)
-        messages?.sort((i, j) =>
-          i.reaction_counts?.upvote < j?.reaction_counts?.upvote ||
-          i.reaction_counts?.upvote === undefined
-            ? -1
-            : 1
-        );
+      if (tabIndex) {
+        messages = Object.values(
+          messages
+            .sort((i, j) =>
+              i.reaction_counts?.upvote < j?.reaction_counts?.upvote ||
+              i.reaction_counts?.upvote === undefined
+                ? -1
+                : 1
+            )
+            .reduce(function (r, a) {
+              r[a.reaction_counts?.upvote] = r[a.reaction_counts?.upvote] || [];
+              r[a.reaction_counts?.upvote].push(a);
+              return r;
+            }, Object.create(null))
+        )
+          .sort((i, j) =>
+            i[0].reaction_counts?.upvote < j[0]?.reaction_counts?.upvote ||
+            i[0].reaction_counts?.upvote === undefined
+              ? -1
+              : 1
+          )
+          .map(m => m.sort((i, j) => (i.created_at > j?.created_at ? -1 : 1)))
+          .flat();
+      }
       var pinned = messages
         ?.filter(m => m.pinned)
         .slice(-2)
         .sort((i, j) => (i.pinned_at < j.pinned_at ? -1 : 1));
+      if (this[`${channel}PendingMsg`])
+        messages.unshift(this[`${channel}PendingMsg`]);
     }
     return (
       <View style={styles.chatContainer}>
