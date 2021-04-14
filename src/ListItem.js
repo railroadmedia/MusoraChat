@@ -169,15 +169,17 @@ export default class ListItem extends React.Component {
                 </Text>
               </View>
             )}
-            <Text style={styles.displayName}>
-              {item.user.displayName}
-              {item.text && (
-                <Text style={{ fontFamily: 'OpenSans', fontWeight: 'normal' }}>
-                  {`\n`}
-                  {item.text}
-                </Text>
-              )}
-            </Text>
+            <View style={styles.msgHeaderContainer}>
+              <Text style={styles.displayName}>{item.user.displayName}</Text>
+              <Text style={styles.timestamp}>
+                {item.created_at?.toLocaleString('en-US', {
+                  hour: 'numeric',
+                  minute: 'numeric',
+                  hour12: true
+                })}
+              </Text>
+            </View>
+            {item.text && <Text style={styles.msgText}>{item.text}</Text>}
             {type === 'question' && (
               <TouchableOpacity
                 onPress={this.props.onToggleReact}
@@ -333,9 +335,24 @@ export default class ListItem extends React.Component {
 }
 const setStyles = isDark =>
   StyleSheet.create({
+    msgHeaderContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center'
+    },
     displayName: {
       color: isDark ? 'white' : 'black',
       fontFamily: 'OpenSans-Bold'
+    },
+    timestamp: {
+      fontFamily: 'OpenSans',
+      color: '#4D5356',
+      fontSize: 8
+    },
+    msgText: {
+      fontFamily: 'OpenSans',
+      fontWeight: 'normal',
+      color: isDark ? 'white' : 'black'
     },
     modalContainer: {
       backgroundColor: '#081825',
