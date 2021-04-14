@@ -12,8 +12,9 @@ import {
   View
 } from 'react-native';
 
-import { StreamChat } from 'stream-chat';
 import AndroidKeyboardAdjust from 'react-native-android-keyboard-adjust';
+import { SafeAreaView } from 'react-navigation';
+import { StreamChat } from 'stream-chat';
 
 import FloatingMenu from './FloatingMenu';
 import Participants from './Participants';
@@ -27,6 +28,7 @@ let styles,
 const tabs = ['CHAT', 'QUESTIONS'];
 export default class MusoraChat extends React.Component {
   state = {
+    comment: '',
     chatTypers: [],
     chatViewers: 0,
     keyboardVisible: false,
@@ -118,13 +120,14 @@ export default class MusoraChat extends React.Component {
     }
     if (type.match(/^(user.banned|user.unbanned|delete_user_messages)$/))
       await this.getChannels();
-    if (
-      this.fListY &&
-      type === 'message.new' &&
-      user.id !== this.props.user.id
-    ) {
-      let { messages } = this.chatChannel.state;
-      messages[messages.length - 1].new = true;
+    if (type === 'message.new') {
+      if (user.id !== this.props.user.id) {
+        if (this.fListY) {
+          let { messages } = this.chatChannel.state;
+          messages[messages.length - 1].new = true;
+        }
+      } else
+        delete this[`${ti ? 'questionsChannel' : 'chatChannel'}PendingMsg`];
     }
     this.setState({
       [`${ti ? 'questions' : 'chat'}Viewers`]:
@@ -187,18 +190,16 @@ export default class MusoraChat extends React.Component {
   );
 
   sendMessage = () => {
+    let channel = this.state.tabIndex ? 'questionsChannel' : 'chatChannel';
+    let { user } = this.client;
     this.commentTextInput?.clear();
-    this[
-      this.state.tabIndex ? 'questionsChannel' : 'chatChannel'
-    ]?.stopTyping();
-    this.setState({ keyboardVisible: false });
-    if (this.comment) {
+    this[channel]?.stopTyping();
+    if (this.state.comment && !user.banned) {
+      this[`${channel}PendingMsg`] = { user, text: this.state.comment, id: 1 };
       this.flatList?.scrollTo({ y: 0, animated: true });
-      this[this.state.tabIndex ? 'questionsChannel' : 'chatChannel']
-        ?.sendMessage({ text: this.comment })
-        .catch(e => {});
-      delete this.comment;
+      this[channel]?.sendMessage({ text: this.state.comment }).catch(e => {});
     }
+    this.setState({ keyboardVisible: false, comment: '' });
   };
 
   formatTypers = () => {
@@ -228,6 +229,7 @@ export default class MusoraChat extends React.Component {
   render() {
     let {
       chatViewers,
+      comment,
       keyboardVisible,
       loading,
       loadingMore,
@@ -236,14 +238,16 @@ export default class MusoraChat extends React.Component {
       showParticipants,
       tabIndex
     } = this.state;
+    let channel = tabIndex ? 'questionsChannel' : 'chatChannel';
     let { appColor, isDark } = this.props;
     if (!loading && !showParticipants && !showBlocked) {
-      var messages = this[
-        tabIndex ? 'questionsChannel' : 'chatChannel'
-      ]?.state?.messages
+      var messages = this[channel]?.state?.messages
         .slice()
         .reverse()
-        ?.filter(m => m.type !== 'deleted' && !m.user.banned);
+        ?.filter(m => m?.type !== 'deleted' && !m?.user.banned);
+      if (this[`${channel}PendingMsg`])
+        messages.unshift(this[`${channel}PendingMsg`]);
+
       if (tabIndex)
         messages?.sort((i, j) =>
           i.reaction_counts?.upvote < j?.reaction_counts?.upvote ||
@@ -270,7 +274,7 @@ export default class MusoraChat extends React.Component {
             appColor={this.props.appColor}
             admin={this.me?.role === 'admin'}
             onlineUsers={tabIndex ? questionsViewers : chatViewers}
-            channel={this[tabIndex ? 'questionsChannel' : 'chatChannel']}
+            channel={this[channel]}
             onBack={() => this.setState({ showParticipants: false })}
             onBlockedStudents={() =>
               this.setState({ showParticipants: false, showBlocked: true })
@@ -370,10 +374,25 @@ export default class MusoraChat extends React.Component {
                   this.floatingMenu?.close
                 )
               }
-              style={styles.saySomethingTOpacity}
+              style={[
+                styles.saySomethingTOpacity,
+                {
+                  backgroundColor: keyboardVisible
+                    ? 'transparent'
+                    : isDark
+                    ? 'black'
+                    : 'white'
+                }
+              ]}
             >
-              <Text style={styles.placeHolderText}>
-                {this.comment ||
+              <Text
+                style={[
+                  styles.placeHolderText,
+                  { opacity: keyboardVisible ? 0 : 1 }
+                ]}
+                numberOfLines={1}
+              >
+                {comment ||
                   `${tabIndex ? 'Ask a question' : 'Say something'}...`}
               </Text>
               <TouchableOpacity
@@ -383,7 +402,11 @@ export default class MusoraChat extends React.Component {
                 {sendMsg({
                   height: 12,
                   width: 12,
-                  fill: isDark ? '#4D5356' : '#879097'
+                  fill: keyboardVisible
+                    ? 'transparent'
+                    : isDark
+                    ? '#4D5356'
+                    : '#879097'
                 })}
               </TouchableOpacity>
             </TouchableOpacity>
@@ -427,41 +450,44 @@ export default class MusoraChat extends React.Component {
                 style={{ flex: 1, justifyContent: 'flex-end' }}
                 onPress={() => this.setState({ keyboardVisible: false })}
               >
-                <KeyboardAvoidingView
-                  style={{ flex: 1, justifyContent: 'flex-end' }}
-                  behavior={isiOS ? 'padding' : ''}
+                <SafeAreaView
+                  style={{ flex: 1 }}
+                  forceInset={{ top: 'always', bottom: 'always' }}
                 >
-                  <View style={styles.textInputContainer}>
-                    <TextInput
-                      multiline={true}
-                      blurOnSubmit={true}
-                      style={styles.textInput}
-                      onChangeText={comment => {
-                        this.comment = comment;
-                        this[
-                          tabIndex ? 'questionsChannel' : 'chatChannel'
-                        ]?.keystroke();
-                      }}
-                      placeholder={'Say something...'}
-                      onSubmitEditing={this.sendMessage}
-                      ref={r => (this.commentTextInput = r)}
-                      keyboardAppearance={'dark'}
-                      placeholderTextColor={isDark ? '#4D5356' : '#879097'}
-                      returnKeyType={'send'}
-                      value={this.comment}
-                    />
-                    <TouchableOpacity
-                      onPress={this.sendMessage}
-                      style={{ padding: 20 }}
-                    >
-                      {sendMsg({
-                        height: 12,
-                        width: 12,
-                        fill: isDark ? '#4D5356' : '#879097'
-                      })}
-                    </TouchableOpacity>
-                  </View>
-                </KeyboardAvoidingView>
+                  <KeyboardAvoidingView
+                    style={{ flex: 1, justifyContent: 'flex-end' }}
+                    behavior={isiOS ? 'padding' : ''}
+                  >
+                    <View style={styles.textInputContainer}>
+                      <TextInput
+                        multiline={true}
+                        blurOnSubmit={true}
+                        style={styles.textInput}
+                        onChangeText={cmnt => {
+                          this.setState({ comment: cmnt });
+                          this[channel]?.keystroke();
+                        }}
+                        placeholder={'Say something...'}
+                        onSubmitEditing={this.sendMessage}
+                        ref={r => (this.commentTextInput = r)}
+                        keyboardAppearance={'dark'}
+                        placeholderTextColor={isDark ? '#4D5356' : '#879097'}
+                        returnKeyType={'send'}
+                        value={comment}
+                      />
+                      <TouchableOpacity
+                        onPress={this.sendMessage}
+                        style={{ padding: 20 }}
+                      >
+                        {sendMsg({
+                          height: 12,
+                          width: 12,
+                          fill: isDark ? '#4D5356' : '#879097'
+                        })}
+                      </TouchableOpacity>
+                    </View>
+                  </KeyboardAvoidingView>
+                </SafeAreaView>
               </TouchableOpacity>
             </Modal>
           </>
@@ -497,7 +523,6 @@ const setStyles = isDark =>
     saySomethingTOpacity: {
       margin: 10,
       borderRadius: 5,
-      backgroundColor: isDark ? 'black' : 'white',
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between'
@@ -509,6 +534,7 @@ const setStyles = isDark =>
       fontFamily: 'OpenSans'
     },
     placeHolderText: {
+      flex: 1,
       paddingLeft: 15,
       color: isDark ? '#4D5356' : '#879097',
       fontFamily: 'OpenSans'
