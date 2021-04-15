@@ -1,6 +1,8 @@
 import { StreamChat } from 'stream-chat';
 export default async (apiKey, chatId, userId, gsToken, callback) => {
-  let client = StreamChat.getInstance(apiKey);
+  let client = StreamChat.getInstance(apiKey, {
+    timeout: 10000
+  });
 
   let queryChat = async () =>
     (

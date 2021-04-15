@@ -43,7 +43,9 @@ export default class MusoraChat extends React.Component {
 
   constructor(props) {
     super(props);
-    this.client = StreamChat.getInstance(this.props.clientId);
+    this.client = StreamChat.getInstance(this.props.clientId, {
+      timeout: 10000
+    });
     styles = setStyles(props.isDark);
   }
 
