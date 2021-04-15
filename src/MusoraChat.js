@@ -376,7 +376,9 @@ export default class MusoraChat extends React.Component {
               onEndReached={this.loadMore}
               keyExtractor={item => item.id.toString()}
               ListEmptyComponent={
-                <Text style={styles.emptyListText}>
+                <Text
+                  style={[styles.emptyListText, isiOS ? {} : { scaleY: -1 }]}
+                >
                   {tabIndex ? 'No questions' : 'Say Hi!'}
                 </Text>
               }
