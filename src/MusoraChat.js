@@ -73,9 +73,11 @@ export default class MusoraChat extends React.Component {
 
   connectUser = async () => {
     let { id, gsToken } = this.props.user;
-    this.me =
-      this.client.user ||
-      (await this.client.connectUser({ id: `${id}` }, gsToken)).me;
+    try {
+      this.me = this.client?.user?.displayName
+        ? this.client.user
+        : (await this.client.connectUser({ id: `${id}` }, gsToken)).me;
+    } catch (e) {}
   };
 
   getChannels = async () => {
