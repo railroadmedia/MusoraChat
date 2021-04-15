@@ -9,11 +9,11 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  SafeAreaView
 } from 'react-native';
 
 import AndroidKeyboardAdjust from 'react-native-android-keyboard-adjust';
-import { SafeAreaView } from 'react-navigation';
 import { StreamChat } from 'stream-chat';
 
 import FloatingMenu from './FloatingMenu';
@@ -21,13 +21,15 @@ import Participants from './Participants';
 import BlockedUsers from './BlockedUsers';
 import ListItem from './ListItem';
 
-import { sendMsg } from './svgs';
+import { sendMsg, close } from './svgs';
+import reactions from './reactions';
 
 let styles,
   isiOS = Platform.OS === 'ios';
 const tabs = ['CHAT', 'QUESTIONS'];
 export default class MusoraChat extends React.Component {
   state = {
+    reactionsModalVisible: false,
     comment: '',
     chatTypers: [],
     chatViewers: 0,
@@ -97,15 +99,8 @@ export default class MusoraChat extends React.Component {
     );
   };
 
-  clientEventListener = async ({
-    type,
-    user,
-    watcher_count,
-    channel_id,
-    reaction
-  }) => {
+  clientEventListener = async ({ type, user, watcher_count, channel_id }) => {
     if (type === 'health.check') return;
-    if (type.includes('reaction') && reaction.type !== 'upvote') return;
     let {
       chatTypers,
       chatViewers,
@@ -147,6 +142,25 @@ export default class MusoraChat extends React.Component {
     this.client?.disconnectUser?.();
   };
 
+  renderFLReaction = ({ item }) => (
+    <Text
+      key={item}
+      style={{ fontSize: 40 }}
+      onPress={() => {
+        this.setState({ reactionsModalVisible: false });
+        this[this.state.tabIndex ? 'questionsChannel' : 'chatChannel']
+          .sendReaction(this.msgId, {
+            type: this.me.id,
+            // type: item.codePointAt(0).toString(),
+            reaction: item
+          })
+          .catch(e => {});
+      }}
+    >
+      {item}
+    </Text>
+  );
+
   renderFLItem = ({ item }, pinned) => (
     <ListItem
       new={item.new}
@@ -182,15 +196,29 @@ export default class MusoraChat extends React.Component {
         this.client.pinMessage(item).catch(e => {});
       }}
       onAnswered={() => this.client.deleteMessage(item.id).catch(e => {})}
-      onToggleReact={() => {
-        if (item.own_reactions.some(r => r.type === 'upvote'))
-          this.questionsChannel
-            .deleteReaction(item.id, 'upvote')
-            .catch(e => {});
+      onToggleReact={reaction => {
+        let channel = this.state.tabIndex ? 'questionsChannel' : 'chatChannel';
+        if (reaction === 'upvote')
+          if (item.own_reactions.some(r => r.type === 'upvote'))
+            this.questionsChannel
+              .deleteReaction(item.id, 'upvote')
+              .catch(e => {});
+          else
+            this.questionsChannel
+              .sendReaction(item.id, { type: 'upvote' })
+              .catch(e => {});
         else
-          this.questionsChannel
-            .sendReaction(item.id, { type: 'upvote' })
+          this[channel]
+            .sendReaction(item.id, {
+              type: this.me.id,
+              // type: reaction.codePointAt(0).toString(),
+              reaction
+            })
             .catch(e => {});
+      }}
+      onMoreReactions={id => {
+        this.msgId = id;
+        this.setState({ reactionsModalVisible: true });
       }}
     />
   );
@@ -247,7 +275,8 @@ export default class MusoraChat extends React.Component {
       questionsViewers,
       showBlocked,
       showParticipants,
-      tabIndex
+      tabIndex,
+      reactionsModalVisible
     } = this.state;
     let channel = tabIndex ? 'questionsChannel' : 'chatChannel';
     let { appColor, isDark } = this.props;
@@ -519,6 +548,41 @@ export default class MusoraChat extends React.Component {
                 </SafeAreaView>
               </TouchableOpacity>
             </Modal>
+            <Modal
+              transparent={true}
+              animationType={'slide'}
+              visible={reactionsModalVisible}
+              onRequestClose={() =>
+                this.setState({ reactionsModalVisible: false })
+              }
+            >
+              <SafeAreaView
+                forceInset={{ bottom: 'always', top: 'never' }}
+                style={styles.reactionsSafeArea}
+              >
+                <TouchableOpacity
+                  style={styles.closeReactionsTOpacity}
+                  onPress={() =>
+                    this.setState({ reactionsModalVisible: false })
+                  }
+                >
+                  {close({ width: 30, height: 30, fill: '#9EA1A6' })}
+                </TouchableOpacity>
+                <FlatList
+                  numColumns={5}
+                  windowSize={10}
+                  data={reactions}
+                  columnWrapperStyle={{ justifyContent: 'space-evenly' }}
+                  style={{ flex: 1 }}
+                  initialNumToRender={1}
+                  maxToRenderPerBatch={10}
+                  onEndReachedThreshold={0.01}
+                  removeClippedSubviews={true}
+                  renderItem={this.renderFLReaction}
+                  keyExtractor={item => item}
+                />
+              </SafeAreaView>
+            </Modal>
           </>
         )}
       </View>
@@ -580,5 +644,20 @@ const setStyles = isDark =>
       color: isDark ? 'white' : 'black',
       backgroundColor: isDark ? 'black' : 'white',
       borderRadius: 10
+    },
+    reactionsSafeArea: {
+      height: '80%',
+      position: 'absolute',
+      width: '100%',
+      bottom: 0,
+      backgroundColor: isDark ? 'black' : 'white',
+      alignSelf: 'flex-end',
+      borderTopEndRadius: 20,
+      borderTopStartRadius: 20
+    },
+    closeReactionsTOpacity: {
+      padding: 10,
+      borderRadius: 100,
+      alignSelf: 'flex-end'
     }
   });

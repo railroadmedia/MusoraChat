@@ -192,3 +192,22 @@ export const lifetime = props => (
     />
   </Svg>
 );
+export const plus = props => (
+  <Svg
+    viewBox='0 0 32 32'
+    version='1.1'
+    style={{
+      fillRule: 'evenodd',
+      clipRule: 'evenodd',
+      strokeLinejoin: 'round',
+      width: props.width,
+      height: props.height
+    }}
+  >
+    <Path
+      fill={props.fill}
+      id='plus'
+      d='M15,15l0,-12c0,-0.552 0.448,-1 1,-1c0.552,0 1,0.448 1,1l0,12l12,0c0.552,0 1,0.448 1,1c0,0.552 -0.448,1 -1,1l-12,0l0,12c0,0.552 -0.448,1 -1,1c-0.552,0 -1,-0.448 -1,-1l0,-12l-12,0c-0.552,0 -1,-0.448 -1,-1c0,-0.552 0.448,-1 1,-1l12,0Z'
+    />
+  </Svg>
+);

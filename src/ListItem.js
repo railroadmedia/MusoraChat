@@ -1,5 +1,7 @@
 import React from 'react';
 import {
+  Animated,
+  Easing,
   Image,
   Modal,
   StyleSheet,
@@ -8,15 +10,20 @@ import {
   View
 } from 'react-native';
 
-import { pin, vote, close, coach, team, edge, lifetime } from './svgs';
+import reactions from './reactions';
+import { pin, vote, close, coach, team, edge, lifetime, plus } from './svgs';
 
 let styles;
+let openedReactions = [];
 export default class ListItem extends React.Component {
+  reactionScale = new Animated.Value(0);
+
   constructor(props) {
     super(props);
     styles = setStyles(props.isDark);
 
     this.state = {
+      reactionVisible: false,
       position: props.new ? 'absolute' : 'relative',
       answeredModalVisible: false,
       blockModalVisible: false,
@@ -81,6 +88,21 @@ export default class ListItem extends React.Component {
     </Modal>
   );
 
+  closeReaction = () => {
+    if (openedReactions.length) {
+      openedReactions.map(or =>
+        Animated.timing(or.reactionScale, {
+          duration: 300,
+          easing: Easing.out(Easing.exp),
+          useNativeDriver: true,
+          toValue: 0
+        }).start(() => or.setState({ reactionVisible: false }))
+      );
+      openedReactions = [];
+      return true;
+    }
+  };
+
   render() {
     let {
       admin,
@@ -96,7 +118,7 @@ export default class ListItem extends React.Component {
       reversed,
       type
     } = this.props;
-    let { position } = this.state;
+    let { optionsModalVisible, position, reactionVisible } = this.state;
     let borderColor, userTagIcon;
     switch (aln) {
       case 'edge': {
@@ -120,6 +142,9 @@ export default class ListItem extends React.Component {
         break;
       }
     }
+    let nonVotingReactions = item.latest_reactions
+      ?.filter(lr => lr.reaction)
+      ?.map(lr => lr.reaction);
     return (
       <>
         <TouchableOpacity
@@ -138,7 +163,20 @@ export default class ListItem extends React.Component {
             },
             reversed ? { scaleY: -1 } : {}
           ]}
+          onLongPress={() => {
+            this.closeReaction();
+            openedReactions.push(this);
+            this.setState({ reactionVisible: true }, () => {
+              Animated.timing(this.reactionScale, {
+                duration: 300,
+                easing: Easing.out(Easing.exp),
+                useNativeDriver: true,
+                toValue: 1
+              }).start();
+            });
+          }}
           onPress={() => {
+            if (this.closeReaction()) return;
             this.props.onTap?.();
             if (admin && type === 'banned')
               return this.pickItem('blockModalVisible');
@@ -175,16 +213,7 @@ export default class ListItem extends React.Component {
             {pinned && (
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 {pin({ width: 9, fill: '#9EA1A6' })}
-                <Text
-                  style={{
-                    fontFamily: 'OpenSans',
-                    color: '#9EA1A6',
-                    fontSize: 10
-                  }}
-                >
-                  {' '}
-                  Pinned
-                </Text>
+                <Text style={styles.pinnedText}> Pinned</Text>
               </View>
             )}
             <View style={styles.msgHeaderContainer}>
@@ -198,14 +227,22 @@ export default class ListItem extends React.Component {
               </Text>
             </View>
             {item.text && <Text style={styles.msgText}>{item.text}</Text>}
+            {!!nonVotingReactions?.length && (
+              <View
+                style={{
+                  alignSelf: 'flex-start',
+                  padding: 2,
+                  borderRadius: 50,
+                  backgroundColor: isDark ? '#445F74' : '#879097'
+                }}
+              >
+                <Text>{nonVotingReactions.join('')}</Text>
+              </View>
+            )}
             {type === 'question' && (
               <TouchableOpacity
-                onPress={this.props.onToggleReact}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  padding: 5
-                }}
+                onPress={() => this.props.onToggleReact('upvote')}
+                style={styles.voteTOpacity}
               >
                 {vote({
                   width: 10,
@@ -235,15 +272,7 @@ export default class ListItem extends React.Component {
           </View>
           {admin && type === 'banned' && (
             <>
-              <Text
-                style={{
-                  color: '#4D5356',
-                  fontFamily: 'OpenSans',
-                  paddingHorizontal: 5
-                }}
-              >
-                Unblock
-              </Text>
+              <Text style={styles.unblockText}>Unblock</Text>
               {close({ width: 15, height: 15, fill: '#9EA1A6' })}
             </>
           )}
@@ -251,7 +280,7 @@ export default class ListItem extends React.Component {
         <Modal
           transparent={true}
           animationType={'slide'}
-          visible={this.state.optionsModalVisible}
+          visible={optionsModalVisible}
           onRequestClose={() => this.setState({ optionsModalVisible: false })}
         >
           <TouchableOpacity
@@ -347,6 +376,36 @@ export default class ListItem extends React.Component {
           'answeredModalVisible',
           'onAnswered'
         )}
+        {reactionVisible && (
+          <Animated.View
+            style={[
+              styles.reactionAView,
+              { transform: [{ scale: this.reactionScale }] }
+            ]}
+          >
+            {reactions.slice(0, 6).map(r => (
+              <Text
+                key={r}
+                style={{ fontSize: 40, paddingHorizontal: 5 }}
+                onPress={() => {
+                  this.closeReaction();
+                  this.props.onToggleReact(r);
+                }}
+              >
+                {r}
+              </Text>
+            ))}
+            <TouchableOpacity
+              onPress={() => {
+                this.closeReaction();
+                this.props.onMoreReactions(item.id);
+              }}
+              style={{ padding: 5, paddingRight: 10 }}
+            >
+              {plus({ width: 20, height: 20, fill: appColor })}
+            </TouchableOpacity>
+          </Animated.View>
+        )}
       </>
     );
   }
@@ -367,10 +426,25 @@ const setStyles = isDark =>
       color: '#4D5356',
       fontSize: 8
     },
+    pinnedText: {
+      fontFamily: 'OpenSans',
+      color: '#9EA1A6',
+      fontSize: 10
+    },
+    voteTOpacity: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 5
+    },
     msgText: {
       fontFamily: 'OpenSans',
       fontWeight: 'normal',
       color: isDark ? 'white' : 'black'
+    },
+    unblockText: {
+      color: '#4D5356',
+      fontFamily: 'OpenSans',
+      paddingHorizontal: 5
     },
     modalContainer: {
       backgroundColor: '#081825',
@@ -412,5 +486,15 @@ const setStyles = isDark =>
       borderRadius: 100,
       alignItems: 'center',
       justifyContent: 'center'
+    },
+    reactionAView: {
+      top: 0,
+      alignItems: 'center',
+      borderRadius: 100,
+      borderWidth: 0.5,
+      alignSelf: 'center',
+      position: 'absolute',
+      backgroundColor: isDark ? '#00101D' : '#F2F3F5',
+      flexDirection: 'row'
     }
   });
