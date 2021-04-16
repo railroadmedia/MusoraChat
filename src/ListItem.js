@@ -197,7 +197,7 @@ export default class ListItem extends React.Component {
                 })}
               </Text>
             </View>
-            {item.text && <Text style={styles.msgText}>{item.text}</Text>}
+            {!!item.text && <Text style={styles.msgText}>{item.text}</Text>}
             {type === 'question' && (
               <TouchableOpacity
                 onPress={this.props.onToggleReact}
