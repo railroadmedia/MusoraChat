@@ -21,7 +21,7 @@ import Participants from './Participants';
 import BlockedUsers from './BlockedUsers';
 import ListItem from './ListItem';
 
-import { sendMsg } from './svgs';
+import { sendMsg, x } from './svgs';
 
 let styles,
   isiOS = Platform.OS === 'ios';
@@ -149,6 +149,7 @@ export default class MusoraChat extends React.Component {
 
   renderFLItem = ({ item }, pinned) => (
     <ListItem
+      editing={this.editMessage?.id === item.id}
       new={item.new}
       reversed={!isiOS && !pinned}
       isDark={this.props.isDark}
@@ -192,26 +193,52 @@ export default class MusoraChat extends React.Component {
             .sendReaction(item.id, { type: 'upvote' })
             .catch(e => {});
       }}
+      onEditMessage={() => {
+        this.editMessage = item;
+        this.setState({ keyboardVisible: true, comment: item.text });
+      }}
     />
   );
 
-  sendMessage = () => {
+  handleMessage = () => {
+    if (this.editToBeCancelled) {
+      this.setState({ keyboardVisible: false, comment: '' });
+      return delete this.editMessage;
+    }
     let channel = this.state.tabIndex ? 'questionsChannel' : 'chatChannel';
     let { user } = this.client;
     this.commentTextInput?.clear();
     this[channel]?.stopTyping();
     if (this.state.comment && !user.banned) {
-      this[`${channel}PendingMsg`] = {
-        user,
-        text: this.state.comment,
-        id: 1,
-        created_at: new Date()
-      };
-      this.flatList?.scrollTo({ y: 0, animated: true });
-      this[channel]?.sendMessage({ text: this.state.comment }).catch(e => {});
+      if (this.editMessage) {
+        this.editMessage.text = this.state.comment;
+        this.client
+          ?.updateMessage({
+            text: this.state.comment,
+            id: this.editMessage.id
+          })
+          .catch(e => {});
+      } else {
+        this[`${channel}PendingMsg`] = {
+          user,
+          text: this.state.comment,
+          id: 1,
+          created_at: new Date()
+        };
+        this.flatList?.scrollTo({ y: 0, animated: true });
+        this[channel]?.sendMessage({ text: this.state.comment }).catch(e => {});
+      }
     }
+    delete this.editMessage;
     this.setState({ keyboardVisible: false, comment: '' });
   };
+
+  get editToBeCancelled() {
+    return (
+      this.editMessage?.text === this.state.comment ||
+      (this.editMessage && !this.state.comment)
+    );
+  }
 
   formatTypers = () => {
     let typers = this.state[
@@ -421,14 +448,16 @@ export default class MusoraChat extends React.Component {
                 ]}
                 numberOfLines={1}
               >
-                {comment ||
-                  `${tabIndex ? 'Ask a question' : 'Say something'}...`}
+                {this.editMessage
+                  ? comment
+                  : comment ||
+                    `${tabIndex ? 'Ask a question' : 'Say something'}...`}
               </Text>
               <TouchableOpacity
-                onPress={this.sendMessage}
+                onPress={this.handleMessage}
                 style={{ padding: 15 }}
               >
-                {sendMsg({
+                {(this.editToBeCancelled ? x : sendMsg)({
                   height: 12,
                   width: 12,
                   fill: keyboardVisible
@@ -497,7 +526,7 @@ export default class MusoraChat extends React.Component {
                           this[channel]?.keystroke();
                         }}
                         placeholder={'Say something...'}
-                        onSubmitEditing={this.sendMessage}
+                        onSubmitEditing={this.handleMessage}
                         ref={r => (this.commentTextInput = r)}
                         keyboardAppearance={'dark'}
                         placeholderTextColor={isDark ? '#4D5356' : '#879097'}
@@ -505,10 +534,10 @@ export default class MusoraChat extends React.Component {
                         value={comment}
                       />
                       <TouchableOpacity
-                        onPress={this.sendMessage}
+                        onPress={this.handleMessage}
                         style={{ padding: 20 }}
                       >
-                        {sendMsg({
+                        {(this.editToBeCancelled ? x : sendMsg)({
                           height: 12,
                           width: 12,
                           fill: isDark ? '#4D5356' : '#879097'

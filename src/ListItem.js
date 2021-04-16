@@ -35,9 +35,11 @@ export default class ListItem extends React.Component {
   pickItem = nextModal =>
     this.setState(
       { optionsModalVisible: false },
-      nextModal
-        ? () => this.setState({ [nextModal]: true })
-        : this.props.onTogglePinMessage
+      nextModal === 'pin'
+        ? this.props.onTogglePinMessage
+        : nextModal === 'edit'
+        ? this.props.onEditMessage
+        : () => this.setState({ [nextModal]: true })
     );
 
   confirm = propAction =>
@@ -86,6 +88,7 @@ export default class ListItem extends React.Component {
       admin,
       appColor,
       center,
+      editing,
       item,
       item: {
         user: { accessLevelName: aln }
@@ -134,7 +137,13 @@ export default class ListItem extends React.Component {
               padding: 10,
               flexDirection: 'row',
               alignItems: center ? 'center' : 'flex-start',
-              backgroundColor: pinned ? (isDark ? '#0C131B' : 'white') : ''
+              backgroundColor: editing
+                ? `${appColor}33`
+                : pinned
+                ? isDark
+                  ? '#0C131B'
+                  : 'white'
+                : 'transparent'
             },
             reversed ? { scaleY: -1 } : {}
           ]}
@@ -171,7 +180,7 @@ export default class ListItem extends React.Component {
               {userTagIcon?.({ height: 5, fill: 'white' })}
             </View>
           </View>
-          <View style={{ paddingHorizontal: 10, flex: 1 }}>
+          <View style={{ paddingLeft: 10, flex: 1 }}>
             {pinned && (
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 {pin({ width: 9, fill: '#9EA1A6' })}
@@ -188,7 +197,10 @@ export default class ListItem extends React.Component {
               </View>
             )}
             <View style={styles.msgHeaderContainer}>
-              <Text style={styles.displayName}>{item.user.displayName}</Text>
+              <Text style={styles.displayName}>
+                {item.user.displayName}
+                {editing && <Text style={styles.editing}> Editing</Text>}
+              </Text>
               <Text style={styles.timestamp}>
                 {item.created_at?.toLocaleString('en-US', {
                   hour: 'numeric',
@@ -264,7 +276,7 @@ export default class ListItem extends React.Component {
                 <>
                   <Text style={styles.modalHeader}>Moderation</Text>
                   {type === 'message' && (
-                    <TouchableOpacity onPress={() => this.pickItem()}>
+                    <TouchableOpacity onPress={() => this.pickItem('pin')}>
                       <Text style={styles.itemText}>
                         {item.pinned ? 'Unpin' : 'Pin'} Message
                       </Text>
@@ -277,6 +289,11 @@ export default class ListItem extends React.Component {
                   onPress={() => this.pickItem('answeredModalVisible')}
                 >
                   <Text style={styles.itemText}>Mark As Answered</Text>
+                </TouchableOpacity>
+              )}
+              {own && (
+                <TouchableOpacity onPress={() => this.pickItem('edit')}>
+                  <Text style={styles.itemText}>Edit Message</Text>
                 </TouchableOpacity>
               )}
               {[{ text: 'Remove Message', nextModal: 'removeModalVisible' }]
@@ -361,6 +378,11 @@ const setStyles = isDark =>
     displayName: {
       color: isDark ? 'white' : 'black',
       fontFamily: 'OpenSans-Bold'
+    },
+    editing: {
+      fontFamily: 'OpenSans-Italic',
+      color: '#4D5356',
+      fontSize: 8
     },
     timestamp: {
       fontFamily: 'OpenSans',
