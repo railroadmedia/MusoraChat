@@ -102,7 +102,8 @@ export default class MusoraChat extends React.Component {
     user,
     watcher_count,
     channel_id,
-    reaction
+    reaction,
+    message
   }) => {
     if (type === 'health.check') return;
     if (type.includes('reaction') && reaction.type !== 'upvote') return;
@@ -132,8 +133,26 @@ export default class MusoraChat extends React.Component {
           let { messages } = this.chatChannel.state;
           messages[messages.length - 1].new = true;
         }
-      } else
+        if (ti)
+          this.questionsChannel.state.messages.find(
+            m => m.id === message.id
+          ).reaction_counts = { upvote: 1 };
+      } else {
+        if (ti) {
+          let msgToAddReact = this.questionsChannel.state.messages.find(
+            m => m.id === message.id
+          );
+          msgToAddReact.own_reactions = [{ type: 'upvote', tbRemoved: true }];
+          msgToAddReact.reaction_counts = { upvote: 1 };
+        }
         delete this[`${ti ? 'questionsChannel' : 'chatChannel'}PendingMsg`];
+      }
+    }
+    if (ti && type === 'reaction.new' && reaction.user_id === user.id) {
+      let message = this.questionsChannel.state.messages.find(
+        m => m.id === reaction.message_id
+      );
+      message.own_reactions = message.own_reactions.filter(or => !or.tbRemoved);
     }
     this.setState({
       [`${ti ? 'questions' : 'chat'}Viewers`]:
@@ -225,8 +244,23 @@ export default class MusoraChat extends React.Component {
           id: 1,
           created_at: new Date()
         };
+        if (channel === 'questionsChannel') {
+          this[`${channel}PendingMsg`].own_reactions = [
+            { type: 'upvote', tbRemoved: true }
+          ];
+          this[`${channel}PendingMsg`].reaction_counts = { upvote: 1 };
+        }
         this.flatList?.scrollTo({ y: 0, animated: true });
-        this[channel]?.sendMessage({ text: this.state.comment }).catch(e => {});
+        this[channel]
+          ?.sendMessage({ text: this.state.comment })
+          .then(({ message: { id } }) => {
+            if (channel === 'questionsChannel') {
+              this.questionsChannel
+                .sendReaction(id, { type: 'upvote' })
+                .catch(e => {});
+            }
+          })
+          .catch(e => {});
       }
     }
     delete this.editMessage;
@@ -283,6 +317,8 @@ export default class MusoraChat extends React.Component {
         .slice()
         .reverse()
         ?.filter(m => m?.type !== 'deleted' && !m?.user.banned);
+      if (this[`${channel}PendingMsg`])
+        messages.unshift(this[`${channel}PendingMsg`]);
       if (tabIndex) {
         messages = Object.values(
           messages
@@ -311,8 +347,6 @@ export default class MusoraChat extends React.Component {
         ?.filter(m => m.pinned)
         .slice(-2)
         .sort((i, j) => (i.pinned_at < j.pinned_at ? -1 : 1));
-      if (this[`${channel}PendingMsg`])
-        messages.unshift(this[`${channel}PendingMsg`]);
     }
     return (
       <View style={styles.chatContainer}>
