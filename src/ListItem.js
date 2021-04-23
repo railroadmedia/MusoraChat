@@ -107,6 +107,10 @@ export default class ListItem extends React.Component {
         userTagIcon = edge;
         break;
       }
+      case 'piano': {
+        borderColor = appColor;
+        break;
+      }
       case 'team': {
         borderColor = 'black';
         userTagIcon = team;
