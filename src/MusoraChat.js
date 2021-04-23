@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import AndroidKeyboardAdjust from 'react-native-android-keyboard-adjust';
-import { SafeAreaView } from 'react-navigation';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StreamChat } from 'stream-chat';
 
 import FloatingMenu from './FloatingMenu';
@@ -542,10 +542,7 @@ export default class MusoraChat extends React.Component {
                 style={{ flex: 1, justifyContent: 'flex-end' }}
                 onPress={() => this.setState({ keyboardVisible: false })}
               >
-                <SafeAreaView
-                  style={{ flex: 1 }}
-                  forceInset={{ top: 'always', bottom: 'always' }}
-                >
+                <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'top']}>
                   <KeyboardAvoidingView
                     style={{ flex: 1, justifyContent: 'flex-end' }}
                     behavior={isiOS ? 'padding' : ''}
