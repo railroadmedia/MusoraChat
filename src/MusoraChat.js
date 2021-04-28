@@ -21,7 +21,7 @@ import Participants from './Participants';
 import BlockedUsers from './BlockedUsers';
 import ListItem from './ListItem';
 
-import { sendMsg, x } from './svgs';
+import { sendMsg, x, arrowDown } from './svgs';
 
 let styles,
   isiOS = Platform.OS === 'ios';
@@ -38,7 +38,8 @@ export default class MusoraChat extends React.Component {
     questionsViewers: 0,
     showBlocked: false,
     showParticipants: false,
-    tabIndex: 0
+    tabIndex: 0,
+    showScrollToTop: false
   };
 
   constructor(props) {
@@ -308,7 +309,8 @@ export default class MusoraChat extends React.Component {
       questionsViewers,
       showBlocked,
       showParticipants,
-      tabIndex
+      tabIndex,
+      showScrollToTop
     } = this.state;
     let channel = tabIndex ? 'questionsChannel' : 'chatChannel';
     let { appColor, isDark } = this.props;
@@ -422,41 +424,69 @@ export default class MusoraChat extends React.Component {
               ))}
             </View>
             {pinned?.map(item => this.renderFLItem({ item }, true))}
-            <FlatList
-              inverted={isiOS}
-              onScroll={({
-                nativeEvent: {
-                  contentOffset: { y }
+            <View style={{ flex: 1 }}>
+              <FlatList
+                key={tabIndex}
+                inverted={isiOS}
+                onScroll={({
+                  nativeEvent: {
+                    contentOffset: { y }
+                  }
+                }) => {
+                  this.fListY = y >= 0 ? y : 0;
+                  this.setState(({ showScrollToTop: sstt }) => {
+                    if (y > 0 && !sstt) return { showScrollToTop: true };
+                    if (y <= 0 && sstt) return { showScrollToTop: false };
+                  });
+                }}
+                windowSize={10}
+                data={messages}
+                style={[styles.flatList, isiOS ? {} : { scaleY: -1 }]}
+                initialNumToRender={1}
+                maxToRenderPerBatch={10}
+                onEndReachedThreshold={0.01}
+                removeClippedSubviews={true}
+                keyboardShouldPersistTaps='handled'
+                renderItem={this.renderFLItem}
+                onEndReached={this.loadMore}
+                keyExtractor={item => item.id.toString()}
+                ListEmptyComponent={
+                  <Text
+                    style={[styles.emptyListText, isiOS ? {} : { scaleY: -1 }]}
+                  >
+                    {tabIndex ? 'No questions' : 'Say Hi!'}
+                  </Text>
                 }
-              }) => (this.fListY = y >= 0 ? y : 0)}
-              windowSize={10}
-              data={messages}
-              style={[styles.flatList, isiOS ? {} : { scaleY: -1 }]}
-              initialNumToRender={1}
-              maxToRenderPerBatch={10}
-              onEndReachedThreshold={0.01}
-              removeClippedSubviews={true}
-              keyboardShouldPersistTaps='handled'
-              renderItem={this.renderFLItem}
-              onEndReached={this.loadMore}
-              keyExtractor={item => item.id.toString()}
-              ListEmptyComponent={
-                <Text
-                  style={[styles.emptyListText, isiOS ? {} : { scaleY: -1 }]}
+                ListFooterComponent={
+                  <ActivityIndicator
+                    size='small'
+                    color={isDark ? 'white' : 'black'}
+                    animating={loadingMore}
+                    style={styles.activityIndicator}
+                  />
+                }
+                ref={r => (this.flatList = r?.getNativeScrollRef())}
+              />
+              {showScrollToTop && (
+                <TouchableOpacity
+                  onPress={() => this.flatList.scrollTo({ y: 0 })}
+                  style={{
+                    width: 30,
+                    aspectRatio: 1,
+                    position: 'absolute',
+                    alignSelf: 'center',
+                    bottom: 10,
+                    padding: 5,
+                    borderRadius: 15,
+                    backgroundColor: appColor,
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
                 >
-                  {tabIndex ? 'No questions' : 'Say Hi!'}
-                </Text>
-              }
-              ListFooterComponent={
-                <ActivityIndicator
-                  size='small'
-                  color={isDark ? 'white' : 'black'}
-                  animating={loadingMore}
-                  style={styles.activityIndicator}
-                />
-              }
-              ref={r => (this.flatList = r?.getNativeScrollRef())}
-            />
+                  {arrowDown({ width: '70%', fill: 'white' })}
+                </TouchableOpacity>
+              )}
+            </View>
             <TouchableOpacity
               onPress={() =>
                 this.setState(

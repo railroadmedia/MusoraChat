@@ -178,10 +178,11 @@ export default class ListItem extends React.Component {
                 position: 'absolute',
                 bottom: 0,
                 lineHeight: 5,
-                alignItems: 'center'
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
             >
-              {userTagIcon?.({ height: 5, fill: 'white' })}
+              {userTagIcon?.({ height: 4, fill: 'white' })}
             </View>
           </View>
           <View style={{ paddingLeft: 10, flex: 1 }}>
