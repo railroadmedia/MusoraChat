@@ -18,6 +18,7 @@ export default class ListItem extends React.Component {
 
     this.state = {
       position: props.new ? 'absolute' : 'relative',
+      hideMessage: false,
       answeredModalVisible: false,
       blockModalVisible: false,
       optionsModalVisible: false,
@@ -39,6 +40,8 @@ export default class ListItem extends React.Component {
         ? this.props.onTogglePinMessage
         : nextModal === 'edit'
         ? this.props.onEditMessage
+        : nextModal === 'hide'
+        ? this.setState(state=> ({ hideMessage: !state.hideMessage }))
         : () => this.setState({ [nextModal]: true })
     );
 
@@ -99,7 +102,7 @@ export default class ListItem extends React.Component {
       reversed,
       type
     } = this.props;
-    let { position } = this.state;
+    let { position, hideMessage } = this.state;
     let borderColor, userTagIcon;
     switch (aln) {
       case 'edge': {
@@ -214,7 +217,11 @@ export default class ListItem extends React.Component {
                 })}
               </Text>
             </View>
-            {!!item.text && <Text style={styles.msgText}>{item.text}</Text>}
+            {!!item.text && (
+              <Text style={[styles.msgText, hideMessage ? { height: 30, paddingBottom: 5 } : {}]}>
+                {item.text}
+              </Text>
+            )}
             {type === 'question' && (
               <TouchableOpacity
                 onPress={this.props.onToggleReact}
@@ -326,6 +333,11 @@ export default class ListItem extends React.Component {
                     <Text style={styles.itemText}>{text}</Text>
                   </TouchableOpacity>
                 ))}
+                {item.pinned && (
+                  <TouchableOpacity onPress={() => this.pickItem('hide')}>
+                    <Text style={styles.itemText}>{hideMessage ? "Show " : "Hide "}Message</Text>
+                  </TouchableOpacity>
+                )}
             </View>
           </TouchableOpacity>
         </Modal>
