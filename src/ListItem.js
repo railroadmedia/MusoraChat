@@ -33,17 +33,23 @@ export default class ListItem extends React.Component {
     return true;
   }
 
-  pickItem = nextModal =>
-    this.setState(
-      { optionsModalVisible: false },
-      nextModal === 'pin'
-        ? this.props.onTogglePinMessage
-        : nextModal === 'edit'
-        ? this.props.onEditMessage
-        : nextModal === 'hide'
-        ? this.setState(state=> ({ hideMessage: !state.hideMessage }))
-        : () => this.setState({ [nextModal]: true })
-    );
+  pickItem = nextModal => {
+    this.setState({ optionsModalVisible: false }, () => {
+      switch (nextModal) {
+        case 'pin':
+          this.props.onTogglePinMessage();
+          break;
+        case 'edit':
+          this.props.onEditMessage();
+          break;
+        case 'hide':
+          this.setState(state => ({ hideMessage: !state.hideMessage }));
+          break;
+        default:
+          this.setState({ [nextModal]: true });
+      }
+    });
+  };
 
   confirm = propAction =>
     this.setState(
