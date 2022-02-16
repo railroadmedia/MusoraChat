@@ -18,7 +18,7 @@ export default class ListItem extends React.Component {
 
     this.state = {
       position: props.new ? 'absolute' : 'relative',
-      hideMessage: false,
+      hideMessage: this.props.hidden ? this.props.hidden : false,
       answeredModalVisible: false,
       blockModalVisible: false,
       optionsModalVisible: false,
@@ -32,7 +32,7 @@ export default class ListItem extends React.Component {
     if (this.props.isDark !== isDark) styles = setStyles(isDark);
     return true;
   }
-
+  
   pickItem = nextModal => {
     this.setState({ optionsModalVisible: false }, () => {
       switch (nextModal) {
@@ -43,7 +43,7 @@ export default class ListItem extends React.Component {
           this.props.onEditMessage();
           break;
         case 'hide':
-          this.setState(state => ({ hideMessage: !state.hideMessage }));
+          this.props.onToggleHidden(this.props.item.id);
           break;
         default:
           this.setState({ [nextModal]: true });
@@ -164,7 +164,7 @@ export default class ListItem extends React.Component {
             this.props.onTap?.();
             if (admin && type === 'banned')
               return this.pickItem('blockModalVisible');
-            if (admin || own) this.setState({ optionsModalVisible: true });
+            if (admin || own || pinned) this.setState({ optionsModalVisible: true });
           }}
         >
           <View
@@ -224,7 +224,7 @@ export default class ListItem extends React.Component {
               </Text>
             </View>
             {!!item.text && (
-              <Text style={[styles.msgText, hideMessage ? { height: 30, paddingBottom: 5 } : {}]}>
+              <Text style={[styles.msgText]} numberOfLines={hideMessage ? 1 : 0}>
                 {item.text}
               </Text>
             )}
@@ -314,7 +314,7 @@ export default class ListItem extends React.Component {
                   <Text style={styles.itemText}>Edit Message</Text>
                 </TouchableOpacity>
               )}
-              {[{ text: 'Remove Message', nextModal: 'removeModalVisible' }]
+              {(admin || own) && [{ text: 'Remove Message', nextModal: 'removeModalVisible' }]
                 .concat(
                   admin
                     ? [
@@ -339,7 +339,7 @@ export default class ListItem extends React.Component {
                     <Text style={styles.itemText}>{text}</Text>
                   </TouchableOpacity>
                 ))}
-                {item.pinned && (
+                {pinned && (
                   <TouchableOpacity onPress={() => this.pickItem('hide')}>
                     <Text style={styles.itemText}>{hideMessage ? "Show " : "Hide "}Message</Text>
                   </TouchableOpacity>
