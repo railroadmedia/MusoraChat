@@ -18,7 +18,7 @@ export default class ListItem extends React.Component {
 
     this.state = {
       position: props.new ? 'absolute' : 'relative',
-      hideMessage: this.props.hidden ? this.props.hidden : false,
+      hideMessage: !!this.props.hidden,
       answeredModalVisible: false,
       blockModalVisible: false,
       optionsModalVisible: false,
@@ -31,6 +31,12 @@ export default class ListItem extends React.Component {
   shouldComponentUpdate({ isDark }) {
     if (this.props.isDark !== isDark) styles = setStyles(isDark);
     return true;
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.hidden !== prevProps.hidden) {
+      this.setState({hideMessage: !!this.props.hidden})
+    }
   }
   
   pickItem = nextModal => {
