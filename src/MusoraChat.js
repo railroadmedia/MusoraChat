@@ -39,7 +39,8 @@ export default class MusoraChat extends React.Component {
     showBlocked: false,
     showParticipants: false,
     tabIndex: 0,
-    showScrollToTop: false
+    showScrollToTop: false,
+    isHidden: []
   };
 
   constructor(props) {
@@ -189,6 +190,7 @@ export default class MusoraChat extends React.Component {
       admin={this.me?.role === 'admin'}
       type={this.state.tabIndex ? 'question' : 'message'}
       pinned={pinned}
+      hidden={pinned ? this.state.isHidden.find((id) => id === item.id) ? true : false : undefined}
       item={item}
       onRemoveMessage={() => this.client.deleteMessage(item.id).catch(e => {})}
       onRemoveAllMessages={() => this.props.onRemoveAllMessages(item.user.id)}
@@ -201,6 +203,13 @@ export default class MusoraChat extends React.Component {
           .slice(1)
           .map(m => this.client.unpinMessage(m).catch(e => {}));
         this.client.pinMessage(item).catch(e => {});
+      }}
+      onToggleHidden={(id) => {
+        if (this.state.isHidden.find((id) => item.id === id)) {
+          this.setState({isHidden: this.state.isHidden.filter((id) => id !== item.id)})
+        } else {
+          this.setState({isHidden: [...this.state.isHidden, id]})
+        }
       }}
       onAnswered={() => this.client.deleteMessage(item.id).catch(e => {})}
       onToggleReact={() => {
