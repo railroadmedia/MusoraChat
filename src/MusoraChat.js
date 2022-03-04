@@ -336,7 +336,7 @@ export default class MusoraChat extends React.Component {
         .sort((i, j) => (i.pinned_at < j.pinned_at ? -1 : 1));
     }
     return (
-      <View style={styles.chatContainer}>
+      <SafeAreaView edges={['bottom']} style={styles.chatContainer}>
         {loading ? (
           <ActivityIndicator
             size='large'
@@ -414,7 +414,7 @@ export default class MusoraChat extends React.Component {
                 }}
                 windowSize={10}
                 data={messages}
-                style={[styles.flatList, isiOS ? {} : { scaleY: -1 }]}
+                style={[styles.flatList, isiOS ? {} : { transform: [{scaleY: -1}] }]}
                 initialNumToRender={1}
                 maxToRenderPerBatch={10}
                 onEndReachedThreshold={0.01}
@@ -424,7 +424,7 @@ export default class MusoraChat extends React.Component {
                 onEndReached={this.loadMore}
                 keyExtractor={item => item.id.toString()}
                 ListEmptyComponent={
-                  <Text style={[styles.emptyListText, isiOS ? {} : { scaleY: -1 }]}>
+                  <Text style={[styles.emptyListText, isiOS ? {} : { transform: [{scaleY: -1}] }]}>
                     {tabIndex ? 'No questions' : 'Say Hi!'}
                   </Text>
                 }
@@ -552,7 +552,7 @@ export default class MusoraChat extends React.Component {
             </Modal>
           </>
         )}
-      </View>
+      </SafeAreaView>
     );
   }
 }
