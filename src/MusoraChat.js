@@ -9,7 +9,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 
 import AndroidKeyboardAdjust from 'react-native-android-keyboard-adjust';
@@ -40,13 +40,13 @@ export default class MusoraChat extends React.Component {
     showParticipants: false,
     tabIndex: 0,
     showScrollToTop: false,
-    isHidden: []
+    isHidden: [],
   };
 
   constructor(props) {
     super(props);
     this.client = StreamChat.getInstance(this.props.clientId, {
-      timeout: 10000
+      timeout: 10000,
     });
     styles = setStyles(props.isDark);
   }
@@ -60,7 +60,7 @@ export default class MusoraChat extends React.Component {
         this.setState({
           loading: false,
           chatViewers: this.chatChannel?.state.watcher_count,
-          questionsViewers: this.questionsChannel?.state.watcher_count
+          questionsViewers: this.questionsChannel?.state.watcher_count,
         });
       });
   }
@@ -88,34 +88,19 @@ export default class MusoraChat extends React.Component {
     let { chatId, questionsId } = this.props;
     let channels = await this.client.queryChannels(
       {
-        id: { $in: [this.props.chatId, this.props.questionsId] }
+        id: { $in: [this.props.chatId, this.props.questionsId] },
       },
       [{}],
       { message_limit: 200 }
     );
     this.chatChannel = channels.find(channel => channel.id === chatId);
-    this.questionsChannel = channels.find(
-      channel => channel.id === questionsId
-    );
+    this.questionsChannel = channels.find(channel => channel.id === questionsId);
   };
 
-  clientEventListener = async ({
-    type,
-    user,
-    watcher_count,
-    channel_id,
-    reaction,
-    message
-  }) => {
+  clientEventListener = async ({ type, user, watcher_count, channel_id, reaction, message }) => {
     if (type === 'health.check') return;
     if (type.includes('reaction') && reaction.type !== 'upvote') return;
-    let {
-      chatTypers,
-      chatViewers,
-      questionsTypers,
-      questionsViewers,
-      tabIndex: ti
-    } = this.state;
+    let { chatTypers, questionsTypers, tabIndex: ti } = this.state;
     let ct = new Set(chatTypers);
     let qt = new Set(questionsTypers);
     if (ti && channel_id === this.props.questionsId) {
@@ -136,14 +121,12 @@ export default class MusoraChat extends React.Component {
           messages[messages.length - 1].new = true;
         }
         if (ti)
-          this.questionsChannel.state.messages.find(
-            m => m.id === message.id
-          ).reaction_counts = { upvote: 1 };
+          this.questionsChannel.state.messages.find(m => m.id === message.id).reaction_counts = {
+            upvote: 1,
+          };
       } else {
         if (ti) {
-          let msgToAddReact = this.questionsChannel.state.messages.find(
-            m => m.id === message.id
-          );
+          let msgToAddReact = this.questionsChannel.state.messages.find(m => m.id === message.id);
           msgToAddReact.own_reactions = [{ type: 'upvote', tbRemoved: true }];
           msgToAddReact.reaction_counts = { upvote: 1 };
         }
@@ -151,21 +134,27 @@ export default class MusoraChat extends React.Component {
       }
     }
     if (ti && type === 'reaction.new' && reaction.user_id === user.id) {
-      let message = this.questionsChannel.state.messages.find(
-        m => m.id === reaction.message_id
-      );
+      let message = this.questionsChannel.state.messages.find(m => m.id === reaction.message_id);
       message.own_reactions = message.own_reactions.filter(or => !or.tbRemoved);
     }
-    this.setState({
-      [`${ti ? 'questions' : 'chat'}Viewers`]:
-        watcher_count || (ti ? questionsViewers : chatViewers),
-      [`${ti ? 'questions' : 'chat'}Typers`]: Array.from(ti ? qt : ct)
-    });
+
+    if (type?.includes('watching') && watcher_count) {
+      if (channel_id === this.props.questionsId) {
+        this.setState({questionViewers:watcher_count})
+      } else {
+        this.setState({chatViewers:watcher_count})
+      }
+    }
+    if (type?.includes('typing')) {
+      this.setState({
+        [`${ti ? 'questions' : 'chat'}Typers`]: Array.from(ti ? qt : ct),
+      });
+    }
   };
 
   disconnectUser = async () => {
     this.client?.off(this.clientEventListener);
-    this.client?.disconnectUser?.();
+    await this.client?.disconnectUser?.();
   };
 
   renderFLItem = ({ item }, pinned) => (
@@ -181,7 +170,7 @@ export default class MusoraChat extends React.Component {
           delete item.new;
           this.flatList.scrollTo({
             y: this.fListY + ne.layout.height,
-            animated: false
+            animated: false,
           });
         }
       }}
@@ -190,7 +179,7 @@ export default class MusoraChat extends React.Component {
       admin={this.me?.role === 'admin'}
       type={this.state.tabIndex ? 'question' : 'message'}
       pinned={pinned}
-      hidden={pinned ? this.state.isHidden.find((id) => id === item.id) ? true : false : undefined}
+      hidden={pinned ? (this.state.isHidden.find(id => id === item.id) ? true : false) : undefined}
       item={item}
       onRemoveMessage={() => this.client.deleteMessage(item.id).catch(e => {})}
       onRemoveAllMessages={() => this.props.onRemoveAllMessages(item.user.id)}
@@ -204,23 +193,18 @@ export default class MusoraChat extends React.Component {
           .map(m => this.client.unpinMessage(m).catch(e => {}));
         this.client.pinMessage(item).catch(e => {});
       }}
-      onToggleHidden={(id) => {
-        if (this.state.isHidden.find((id) => item.id === id)) {
-          this.setState({isHidden: this.state.isHidden.filter((id) => id !== item.id)})
+      onToggleHidden={id => {
+        if (this.state.isHidden.find(id => item.id === id)) {
+          this.setState({ isHidden: this.state.isHidden.filter(id => id !== item.id) });
         } else {
-          this.setState({isHidden: [...this.state.isHidden, id]})
+          this.setState({ isHidden: [...this.state.isHidden, id] });
         }
       }}
       onAnswered={() => this.client.deleteMessage(item.id).catch(e => {})}
       onToggleReact={() => {
         if (item.own_reactions.some(r => r.type === 'upvote'))
-          this.questionsChannel
-            .deleteReaction(item.id, 'upvote')
-            .catch(e => {});
-        else
-          this.questionsChannel
-            .sendReaction(item.id, { type: 'upvote' })
-            .catch(e => {});
+          this.questionsChannel.deleteReaction(item.id, 'upvote').catch(e => {});
+        else this.questionsChannel.sendReaction(item.id, { type: 'upvote' }).catch(e => {});
       }}
       onEditMessage={() => {
         this.editMessage = item;
@@ -244,7 +228,7 @@ export default class MusoraChat extends React.Component {
         this.client
           ?.updateMessage({
             text: this.state.comment,
-            id: this.editMessage.id
+            id: this.editMessage.id,
           })
           .catch(e => {});
       } else {
@@ -252,12 +236,10 @@ export default class MusoraChat extends React.Component {
           user,
           text: this.state.comment,
           id: 1,
-          created_at: new Date()
+          created_at: new Date(),
         };
         if (channel === 'questionsChannel') {
-          this[`${channel}PendingMsg`].own_reactions = [
-            { type: 'upvote', tbRemoved: true }
-          ];
+          this[`${channel}PendingMsg`].own_reactions = [{ type: 'upvote', tbRemoved: true }];
           this[`${channel}PendingMsg`].reaction_counts = { upvote: 1 };
         }
         this.flatList?.scrollTo({ y: 0, animated: true });
@@ -265,9 +247,7 @@ export default class MusoraChat extends React.Component {
           ?.sendMessage({ text: this.state.comment })
           .then(({ message: { id } }) => {
             if (channel === 'questionsChannel') {
-              this.questionsChannel
-                .sendReaction(id, { type: 'upvote' })
-                .catch(e => {});
+              this.questionsChannel.sendReaction(id, { type: 'upvote' }).catch(e => {});
             }
           })
           .catch(e => {});
@@ -279,15 +259,12 @@ export default class MusoraChat extends React.Component {
 
   get editToBeCancelled() {
     return (
-      this.editMessage?.text === this.state.comment ||
-      (this.editMessage && !this.state.comment)
+      this.editMessage?.text === this.state.comment || (this.editMessage && !this.state.comment)
     );
   }
 
   formatTypers = () => {
-    let typers = this.state[
-      this.state.tabIndex ? 'questionsTypers' : 'chatTypers'
-    ];
+    let typers = this.state[this.state.tabIndex ? 'questionsTypers' : 'chatTypers'];
     if (!typers.length) return '';
     let firstTwo = typers.slice(0, 2).join(typers.length < 3 ? ' And ' : ', ');
     let remaining = typers.slice(2, typers.length);
@@ -303,7 +280,7 @@ export default class MusoraChat extends React.Component {
       let { tabIndex } = this.state;
       let channel = tabIndex ? 'questionsChannel' : 'chatChannel';
       await this[channel].query({
-        messages: { limit: 50, id_lt: this[channel].state.messages[0].id }
+        messages: { limit: 50, id_lt: this[channel].state.messages[0].id },
       });
       this.setState({ loadingMore: false });
     });
@@ -319,7 +296,7 @@ export default class MusoraChat extends React.Component {
       showBlocked,
       showParticipants,
       tabIndex,
-      showScrollToTop
+      showScrollToTop,
     } = this.state;
     let channel = tabIndex ? 'questionsChannel' : 'chatChannel';
     let { appColor, isDark } = this.props;
@@ -328,8 +305,7 @@ export default class MusoraChat extends React.Component {
         .slice()
         .reverse()
         ?.filter(m => m?.type !== 'deleted' && !m?.user.banned);
-      if (this[`${channel}PendingMsg`])
-        messages.unshift(this[`${channel}PendingMsg`]);
+      if (this[`${channel}PendingMsg`]) messages.unshift(this[`${channel}PendingMsg`]);
       if (tabIndex) {
         messages = Object.values(
           messages
@@ -360,7 +336,7 @@ export default class MusoraChat extends React.Component {
         .sort((i, j) => (i.pinned_at < j.pinned_at ? -1 : 1));
     }
     return (
-      <View style={styles.chatContainer}>
+      <SafeAreaView edges={['bottom']} style={styles.chatContainer}>
         {loading ? (
           <ActivityIndicator
             size='large'
@@ -375,9 +351,7 @@ export default class MusoraChat extends React.Component {
             onlineUsers={tabIndex ? questionsViewers : chatViewers}
             channel={this[channel]}
             onBack={() => this.setState({ showParticipants: false })}
-            onBlockedStudents={() =>
-              this.setState({ showParticipants: false, showBlocked: true })
-            }
+            onBlockedStudents={() => this.setState({ showParticipants: false, showBlocked: true })}
           />
         ) : showBlocked ? (
           <BlockedUsers
@@ -386,9 +360,7 @@ export default class MusoraChat extends React.Component {
             admin={this.me?.role === 'admin'}
             client={this.client}
             onBack={() => this.setState({ showBlocked: false })}
-            onParticipants={() =>
-              this.setState({ showParticipants: true, showBlocked: false })
-            }
+            onParticipants={() => this.setState({ showParticipants: true, showBlocked: false })}
             onUnblockStudent={user => this.props.onToggleBlockStudent(user)}
           />
         ) : (
@@ -397,21 +369,13 @@ export default class MusoraChat extends React.Component {
               {tabs.map((t, i) => (
                 <TouchableOpacity
                   key={t}
-                  onPress={() =>
-                    this.setState({ tabIndex: i }, () =>
-                      this.floatingMenu?.close()
-                    )
-                  }
+                  onPress={() => this.setState({ tabIndex: i }, () => this.floatingMenu?.close())}
                   style={{
                     padding: 10,
                     marginHorizontal: 10,
                     borderBottomWidth: 2,
                     borderBottomColor:
-                      tabIndex === i
-                        ? isDark
-                          ? 'white'
-                          : appColor
-                        : 'transparent'
+                      tabIndex === i ? (isDark ? 'white' : appColor) : 'transparent',
                   }}
                 >
                   <Text
@@ -424,7 +388,7 @@ export default class MusoraChat extends React.Component {
                           : isDark
                           ? '#445F74'
                           : '#879097',
-                      fontFamily: 'RobotoCondensed-Regular'
+                      fontFamily: 'RobotoCondensed-Regular',
                     }}
                   >
                     {t}
@@ -439,8 +403,8 @@ export default class MusoraChat extends React.Component {
                 inverted={isiOS}
                 onScroll={({
                   nativeEvent: {
-                    contentOffset: { y }
-                  }
+                    contentOffset: { y },
+                  },
                 }) => {
                   this.fListY = y >= 0 ? y : 0;
                   this.setState(({ showScrollToTop: sstt }) => {
@@ -450,7 +414,7 @@ export default class MusoraChat extends React.Component {
                 }}
                 windowSize={10}
                 data={messages}
-                style={[styles.flatList, isiOS ? {} : { scaleY: -1 }]}
+                style={[styles.flatList, isiOS ? {} : { transform: [{scaleY: -1}] }]}
                 initialNumToRender={1}
                 maxToRenderPerBatch={10}
                 onEndReachedThreshold={0.01}
@@ -460,9 +424,7 @@ export default class MusoraChat extends React.Component {
                 onEndReached={this.loadMore}
                 keyExtractor={item => item.id.toString()}
                 ListEmptyComponent={
-                  <Text
-                    style={[styles.emptyListText, isiOS ? {} : { scaleY: -1 }]}
-                  >
+                  <Text style={[styles.emptyListText, isiOS ? {} : { transform: [{scaleY: -1}] }]}>
                     {tabIndex ? 'No questions' : 'Say Hi!'}
                   </Text>
                 }
@@ -489,7 +451,7 @@ export default class MusoraChat extends React.Component {
                     borderRadius: 15,
                     backgroundColor: appColor,
                     justifyContent: 'center',
-                    alignItems: 'center'
+                    alignItems: 'center',
                   }}
                 >
                   {arrowDown({ width: '70%', fill: 'white' })}
@@ -497,53 +459,31 @@ export default class MusoraChat extends React.Component {
               )}
             </View>
             <TouchableOpacity
-              onPress={() =>
-                this.setState(
-                  { keyboardVisible: true },
-                  this.floatingMenu?.close
-                )
-              }
+              onPress={() => this.setState({ keyboardVisible: true }, this.floatingMenu?.close)}
               style={[
                 styles.saySomethingTOpacity,
                 {
-                  backgroundColor: keyboardVisible
-                    ? 'transparent'
-                    : isDark
-                    ? 'black'
-                    : 'white'
-                }
+                  backgroundColor: keyboardVisible ? 'transparent' : isDark ? 'black' : 'white',
+                },
               ]}
             >
               <Text
-                style={[
-                  styles.placeHolderText,
-                  { opacity: keyboardVisible ? 0 : 1 }
-                ]}
+                style={[styles.placeHolderText, { opacity: keyboardVisible ? 0 : 1 }]}
                 numberOfLines={1}
               >
                 {this.editMessage
                   ? comment
-                  : comment ||
-                    `${tabIndex ? 'Ask a question' : 'Say something'}...`}
+                  : comment || `${tabIndex ? 'Ask a question' : 'Say something'}...`}
               </Text>
-              <TouchableOpacity
-                onPress={this.handleMessage}
-                style={{ padding: 15 }}
-              >
+              <TouchableOpacity onPress={this.handleMessage} style={{ padding: 15 }}>
                 {(this.editToBeCancelled ? x : sendMsg)({
                   height: 12,
                   width: 12,
-                  fill: keyboardVisible
-                    ? 'transparent'
-                    : isDark
-                    ? '#4D5356'
-                    : '#879097'
+                  fill: keyboardVisible ? 'transparent' : isDark ? '#4D5356' : '#879097',
                 })}
               </TouchableOpacity>
             </TouchableOpacity>
-            <View
-              style={{ flexDirection: 'row', justifyContent: 'space-between' }}
-            >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <Text style={styles.chatEventsInfo}>
                 {tabIndex ? questionsViewers : chatViewers} Online
               </Text>
@@ -567,12 +507,7 @@ export default class MusoraChat extends React.Component {
             />
             <Modal
               onRequestClose={() => this.setState({ keyboardVisible: false })}
-              onShow={() =>
-                setTimeout(
-                  () => this.commentTextInput?.focus(),
-                  isiOS ? 0 : 100
-                )
-              }
+              onShow={() => setTimeout(() => this.commentTextInput?.focus(), isiOS ? 0 : 100)}
               supportedOrientations={['portrait', 'landscape']}
               transparent={true}
               visible={keyboardVisible}
@@ -603,14 +538,11 @@ export default class MusoraChat extends React.Component {
                         returnKeyType={'send'}
                         value={comment}
                       />
-                      <TouchableOpacity
-                        onPress={this.handleMessage}
-                        style={{ padding: 20 }}
-                      >
+                      <TouchableOpacity onPress={this.handleMessage} style={{ padding: 20 }}>
                         {(this.editToBeCancelled ? x : sendMsg)({
                           height: 12,
                           width: 12,
-                          fill: isDark ? '#4D5356' : '#879097'
+                          fill: isDark ? '#4D5356' : '#879097',
                         })}
                       </TouchableOpacity>
                     </View>
@@ -620,7 +552,7 @@ export default class MusoraChat extends React.Component {
             </Modal>
           </>
         )}
-      </View>
+      </SafeAreaView>
     );
   }
 }
@@ -630,54 +562,54 @@ const setStyles = isDark =>
     activityIndicator: { flex: 1, backgroundColor: isDark ? 'black' : 'white' },
     chatContainer: {
       flex: 1,
-      backgroundColor: isDark ? '#00101D' : '#F2F3F5'
+      backgroundColor: isDark ? '#00101D' : '#F2F3F5',
     },
     tabMenu: {
       flexDirection: 'row',
-      alignItems: 'center'
+      alignItems: 'center',
     },
     flatList: {
       flex: 1,
       backgroundColor: isDark ? 'black' : 'white',
       borderTopWidth: isDark ? 0 : 2,
       borderBottomWidth: isDark ? 0 : 2,
-      borderColor: 'rgba(0,0,0,.1)'
+      borderColor: 'rgba(0,0,0,.1)',
     },
     emptyListText: {
       padding: 10,
       textAlign: 'center',
-      color: isDark ? 'white' : 'black'
+      color: isDark ? 'white' : 'black',
     },
     saySomethingTOpacity: {
       margin: 10,
       borderRadius: 5,
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between'
+      justifyContent: 'space-between',
     },
     chatEventsInfo: {
       padding: 10,
       paddingTop: 0,
       color: isDark ? '#445F74' : '#879097',
-      fontFamily: 'OpenSans'
+      fontFamily: 'OpenSans',
     },
     placeHolderText: {
       flex: 1,
       paddingLeft: 15,
       color: isDark ? '#4D5356' : '#879097',
-      fontFamily: 'OpenSans'
+      fontFamily: 'OpenSans',
     },
     textInputContainer: {
       paddingLeft: 10,
       flexDirection: 'row',
       backgroundColor: isDark ? '#1E1E1E' : '#F2F3F5',
-      alignItems: 'center'
+      alignItems: 'center',
     },
     textInput: {
       padding: 10,
       flex: 1,
       color: isDark ? 'white' : 'black',
       backgroundColor: isDark ? 'black' : 'white',
-      borderRadius: 10
-    }
+      borderRadius: 10,
+    },
   });

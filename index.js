@@ -1,4 +1,4 @@
 import MusoraChat from './src/MusoraChat';
-import watchersListener from './src/watchersListener';
+import numberOfStreamWatchers from './src/watchersListener';
 
-export { MusoraChat, watchersListener };
+export { MusoraChat, numberOfStreamWatchers };
