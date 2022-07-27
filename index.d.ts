@@ -1,4 +1,5 @@
 import React from 'react';
+import numberOfStreamWatchers from './src/watchersListener';
 
 declare module "MusoraChat" {
   interface ChatProps {
@@ -16,5 +17,5 @@ declare module "MusoraChat" {
   }
   class Chat extends React.Component<ChatProps, {}> {}
 
-  export default Chat;
+  export default { MusoraChat: Chat, numberOfStreamWatchers };
 }
