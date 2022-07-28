@@ -15,7 +15,7 @@ declare module "MusoraChat" {
       gsToken: string;
     }
   }
-  class Chat extends React.Component<ChatProps, {}> {}
+  class MusoraChat extends React.Component<ChatProps, {}> {}
 
-  export default { MusoraChat: Chat, numberOfStreamWatchers };
+  export { MusoraChat, numberOfStreamWatchers };
 }
