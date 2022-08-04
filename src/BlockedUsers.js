@@ -149,7 +149,7 @@ const setStyles = isDark =>
     activityIndicator: { flex: 1, backgroundColor: isDark ? 'black' : 'white' },
     titleText: {
       color: isDark ? '#445F74' : '#879097',
-      fontFamily: 'RobotoCondensed-Regular'
+      fontFamily: 'OpenSans'
     },
     flatList: {
       flex: 1,

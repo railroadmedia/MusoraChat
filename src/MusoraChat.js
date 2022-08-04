@@ -388,7 +388,7 @@ export default class MusoraChat extends React.Component {
                           : isDark
                           ? '#445F74'
                           : '#879097',
-                      fontFamily: 'RobotoCondensed-Regular',
+                      fontFamily: 'OpenSans',
                     }}
                   >
                     {t}
