@@ -7,8 +7,8 @@ declare module "MusoraChat" {
     chatId: string;
     clientId: string;
     isDark: boolean;
-    onRemoveAllMessages: () => void;
-    onToggleBlockStudent: () => void;
+    onRemoveAllMessages: (userId: string) => void;
+    onToggleBlockStudent: (blockedUser: {banned: boolean; id: userId}) => void;
     questionsId: string;
     user: {
       id: string;
