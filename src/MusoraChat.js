@@ -52,7 +52,7 @@ export default class MusoraChat extends React.Component {
   }
 
   componentDidMount() {
-    if (!isiOS) AndroidKeyboardAdjust.setAdjustPan();
+    if (!isiOS) AndroidKeyboardAdjust?.setAdjustPan();
     this.connectUser()
       .then(this.getChannels)
       .then(() => {
@@ -66,7 +66,7 @@ export default class MusoraChat extends React.Component {
   }
 
   componentWillUnmount() {
-    if (!isiOS) AndroidKeyboardAdjust.setAdjustResize();
+    if (!isiOS) AndroidKeyboardAdjust?.setAdjustResize();
     this.disconnectUser();
   }
 
