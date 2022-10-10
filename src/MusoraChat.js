@@ -522,29 +522,34 @@ export default class MusoraChat extends React.Component {
                     behavior={isiOS ? 'padding' : ''}
                   >
                     <View style={styles.textInputContainer}>
-                      <TextInput
-                        multiline={true}
-                        blurOnSubmit={true}
-                        style={styles.textInput}
-                        onChangeText={cmnt => {
-                          this.setState({ comment: cmnt });
-                          this[channel]?.keystroke();
-                        }}
-                        placeholder={'Say something...'}
-                        onSubmitEditing={this.handleMessage}
-                        ref={r => (this.commentTextInput = r)}
-                        keyboardAppearance={'dark'}
-                        placeholderTextColor={isDark ? '#4D5356' : '#879097'}
-                        returnKeyType={'send'}
-                        value={comment}
-                      />
-                      <TouchableOpacity onPress={this.handleMessage} style={{ padding: 20 }}>
-                        {(this.editToBeCancelled ? x : sendMsg)({
-                          height: 12,
-                          width: 12,
-                          fill: isDark ? '#4D5356' : '#879097',
-                        })}
-                      </TouchableOpacity>
+                      <View style={styles.whiteBG} >
+                        <TextInput
+                          fontFamily={'openSans'}
+                          multiline={true}
+                          blurOnSubmit={true}
+                          style={[styles.textInput]}
+                          onChangeText={cmnt => {
+                            this.setState({ comment: cmnt });
+                            this[channel]?.keystroke();
+                          }}
+                          placeholder={'Say something...'}
+                          onSubmitEditing={this.handleMessage}
+                          ref={r => (this.commentTextInput = r)}
+                          keyboardAppearance={isDark ? 'dark': 'light'}
+                          placeholderTextColor={isDark ? '#4D5356' : '#879097'}
+                          returnKeyType={'send'}
+                          value={comment}
+                        />
+                        <View onPress={this.handleMessage} style={{ padding: 15, backgroundColor: isDark ? 'black' : 'white' }}>
+                          {(this.editToBeCancelled ? x : sendMsg)({
+                            height: 12,
+                            width: 12,
+                            fill: isDark ? '#4D5356' : '#879097',
+                          })}
+                        </View>
+                      </View>
+
+                      <TouchableOpacity onPress={this.handleMessage} style={styles.sendTouchable} />
                     </View>
                   </KeyboardAvoidingView>
                 </SafeAreaView>
@@ -600,16 +605,30 @@ const setStyles = isDark =>
       fontFamily: 'OpenSans',
     },
     textInputContainer: {
-      paddingLeft: 10,
       flexDirection: 'row',
-      backgroundColor: isDark ? '#1E1E1E' : '#F2F3F5',
+      backgroundColor: isDark ? '#00101D' : '#F2F3F5',
       alignItems: 'center',
     },
     textInput: {
       padding: 10,
+      paddingTop: 10,
       flex: 1,
       color: isDark ? 'white' : 'black',
+    },
+    whiteBG: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
       backgroundColor: isDark ? 'black' : 'white',
-      borderRadius: 10,
+      flex: 1,
+      margin: 10,
+      borderRadius: 5,
+      overflow: 'hidden',
+    },
+    sendTouchable: {
+      height: 52,
+      width: 52,
+      position: 'absolute',
+      end: 0
     },
   });
