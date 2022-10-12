@@ -38,7 +38,7 @@ export default class ListItem extends React.Component {
       this.setState({hideMessage: !!this.props.hidden})
     }
   }
-  
+
   pickItem = nextModal => {
     this.setState({ optionsModalVisible: false }, () => {
       switch (nextModal) {
@@ -289,6 +289,7 @@ export default class ListItem extends React.Component {
           animationType={'slide'}
           visible={this.state.optionsModalVisible}
           onRequestClose={() => this.setState({ optionsModalVisible: false })}
+          supportedOrientations={['landscape', 'portrait']}
         >
           <TouchableOpacity
             style={{ flex: 1, justifyContent: 'flex-end' }}
