@@ -428,7 +428,8 @@ const setStyles = isDark =>
       backgroundColor: '#081825',
       padding: 20,
       borderTopEndRadius: 20,
-      borderTopStartRadius: 20
+      borderTopStartRadius: 20,
+      paddingLeft: 35,
     },
     pill: {
       width: '20%',
