@@ -273,7 +273,7 @@ export default class ListItem extends React.Component {
             <>
               <Text
                 style={{
-                  color: '#4D5356',
+                  color: isDark ? 'white' : 'black',
                   fontFamily: 'OpenSans',
                   paddingHorizontal: 5
                 }}
@@ -425,7 +425,7 @@ const setStyles = isDark =>
       color: isDark ? 'white' : 'black'
     },
     modalContainer: {
-      backgroundColor: '#081825',
+      backgroundColor: isDark ? '#00101D' : '#F7F9FC',
       padding: 20,
       borderTopEndRadius: 20,
       borderTopStartRadius: 20,
@@ -434,23 +434,23 @@ const setStyles = isDark =>
     pill: {
       width: '20%',
       height: 2,
-      backgroundColor: 'white',
+      backgroundColor: isDark ? 'white' : 'black',
       borderRadius: 1,
       alignSelf: 'center'
     },
     modalHeader: {
-      color: 'white',
+      color: isDark? 'white' : 'black',
       fontFamily: 'OpenSans-Bold',
       paddingVertical: 10
     },
     itemText: {
       paddingVertical: 10,
-      color: 'white',
+      color: isDark ? 'white' : 'black',
       fontFamily: 'OpenSans'
     },
     confirmModalText: {
       paddingVertical: 10,
-      color: 'white',
+      color: isDark ? 'white' : 'black',
       textAlign: 'center',
       fontFamily: 'OpenSans'
     },
