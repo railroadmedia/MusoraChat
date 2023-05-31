@@ -400,7 +400,7 @@ export default class MusoraChat extends React.Component {
             <View style={{ flex: 1 }}>
               <FlatList
                 key={tabIndex}
-                inverted={true}
+                inverted={isiOS}
                 onScroll={({
                   nativeEvent: {
                     contentOffset: { y },
@@ -414,7 +414,10 @@ export default class MusoraChat extends React.Component {
                 }}
                 windowSize={10}
                 data={messages}
-                style={styles.flatList}
+                style={[
+                  styles.flatList,
+                  isiOS ? {} : { transform: [{ rotate: "180deg" }] },
+                ]}
                 initialNumToRender={1}
                 maxToRenderPerBatch={10}
                 onEndReachedThreshold={0.01}
@@ -424,8 +427,13 @@ export default class MusoraChat extends React.Component {
                 onEndReached={this.loadMore}
                 keyExtractor={item => item.id.toString()}
                 ListEmptyComponent={
-                  <Text style={styles.emptyListText}>
-                    {tabIndex ? 'No questions' : 'Say Hi!'}
+                  <Text
+                    style={[
+                      styles.emptyListText,
+                      isiOS ? {} : { transform: [{ rotate: "180deg" }] },
+                    ]}
+                  >
+                    {tabIndex ? "No questions" : "Say Hi!"}
                   </Text>
                 }
                 ListFooterComponent={

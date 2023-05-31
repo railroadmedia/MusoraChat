@@ -164,7 +164,7 @@ export default class ListItem extends React.Component {
                   : 'white'
                 : 'transparent'
             },
-            reversed ? { scaleY: -1 } : {}
+            reversed ? { transform: [{ rotate: "180deg" }] } : {},
           ]}
           onPress={() => {
             this.props.onTap?.();
