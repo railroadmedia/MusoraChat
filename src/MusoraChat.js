@@ -46,7 +46,7 @@ export default class MusoraChat extends React.Component {
     this.client = StreamChat.getInstance(this.props.clientId, {
       timeout: 10000,
     });
-    styles = setStyles(props.isDark);
+    styles = setStyles(props.isDark, props.appColor);
   }
 
   componentDidMount() {
@@ -422,18 +422,7 @@ export default class MusoraChat extends React.Component {
               {showScrollToTop && (
                 <TouchableOpacity
                   onPress={() => this.flatList.scrollTo({ y: 0 })}
-                  style={{
-                    width: 30,
-                    aspectRatio: 1,
-                    position: 'absolute',
-                    alignSelf: 'center',
-                    bottom: 10,
-                    padding: 5,
-                    borderRadius: 15,
-                    backgroundColor: appColor,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
+                  style={styles.scrollToTop}
                 >
                   {arrowDown({ width: '70%', fill: 'white' })}
                 </TouchableOpacity>
@@ -509,7 +498,7 @@ export default class MusoraChat extends React.Component {
   }
 }
 
-const setStyles = isDark =>
+const setStyles = (isDark, appColor) =>
   StyleSheet.create({
     activityIndicator: {
       flex: 1,
@@ -549,5 +538,17 @@ const setStyles = isDark =>
       paddingLeft: 15,
       color: isDark ? '#4D5356' : '#879097',
       fontFamily: 'OpenSans',
+    },
+    scrollToTop: {
+      width: 30,
+      aspectRatio: 1,
+      position: 'absolute',
+      alignSelf: 'center',
+      bottom: 10,
+      padding: 5,
+      borderRadius: 15,
+      backgroundColor: appColor,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
   });
