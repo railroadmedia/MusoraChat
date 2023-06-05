@@ -367,7 +367,7 @@ export default class MusoraChat extends React.Component {
               isDark={isDark}
               appColor={appColor}
               tabIndex={tabIndex}
-              onTabChange={() => this.setState({ tabIndex: i }, () => this.floatingMenu?.close())}
+              onTabChange={(i) => this.setState({ tabIndex: i }, () => this.floatingMenu?.close())}
             />
             {pinned?.map(item => this.renderFLItem({ item }, true))}
             <View style={{ flex: 1 }}>

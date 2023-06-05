@@ -17,7 +17,7 @@ const TabMenu: FunctionComponent<ITabMenu> = props => {
       {tabs.map((t, i) => (
         <TouchableOpacity
           key={t}
-          onPress={onTabChange}
+          onPress={() => onTabChange(i)}
           style={{
             padding: 10,
             marginHorizontal: 10,
