@@ -2,12 +2,9 @@ import React from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  KeyboardAvoidingView,
-  Modal,
   Platform,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -23,6 +20,7 @@ import ListItem from './ListItem';
 
 import { sendMsg, x, arrowDown } from './svgs';
 import TabMenu from './TabMenu';
+import TextBoxModal from './TextBoxModal';
 
 let styles,
   isiOS = Platform.OS === 'ios';
@@ -488,56 +486,22 @@ export default class MusoraChat extends React.Component {
               onParticipants={() => this.setState({ showParticipants: true })}
               onBlockedStudents={() => this.setState({ showBlocked: true })}
             />
-            <Modal
-              onRequestClose={() => this.setState({ keyboardVisible: false })}
+            <TextBoxModal
+              onClose={() => this.setState({ keyboardVisible: false })}
               onShow={() => setTimeout(() => this.commentTextInput?.focus(), isiOS ? 0 : 100)}
-              supportedOrientations={['portrait', 'landscape']}
-              transparent={true}
               visible={keyboardVisible}
-            >
-              <TouchableOpacity
-                style={{ flex: 1, justifyContent: 'flex-end' }}
-                onPress={() => this.setState({ keyboardVisible: false })}
-              >
-                <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'top']}>
-                  <KeyboardAvoidingView
-                    style={{ flex: 1, justifyContent: 'flex-end' }}
-                    behavior={isiOS ? 'padding' : ''}
-                  >
-                    <View style={styles.textInputContainer}>
-                      <View style={styles.whiteBG} >
-                        <TextInput
-                          fontFamily={'openSans'}
-                          multiline={true}
-                          blurOnSubmit={true}
-                          style={[styles.textInput]}
-                          onChangeText={cmnt => {
-                            this.setState({ comment: cmnt });
-                            this[channel]?.keystroke();
-                          }}
-                          placeholder={'Say something...'}
-                          onSubmitEditing={this.handleMessage}
-                          ref={r => (this.commentTextInput = r)}
-                          keyboardAppearance={isDark ? 'dark': 'light'}
-                          placeholderTextColor={isDark ? '#4D5356' : '#879097'}
-                          returnKeyType={'send'}
-                          value={comment}
-                        />
-                        <View onPress={this.handleMessage} style={{ padding: 15, backgroundColor: isDark ? 'black' : 'white' }}>
-                          {(this.editToBeCancelled ? x : sendMsg)({
-                            height: 12,
-                            width: 12,
-                            fill: isDark ? '#4D5356' : '#879097',
-                          })}
-                        </View>
-                      </View>
-
-                      <TouchableOpacity onPress={this.handleMessage} style={styles.sendTouchable} />
-                    </View>
-                  </KeyboardAvoidingView>
-                </SafeAreaView>
-              </TouchableOpacity>
-            </Modal>
+              isDark={isDark}
+              ref={r => (this.commentTextInput = r)}
+              icon={(
+                <>
+                  {(this.editToBeCancelled ? x : sendMsg)({
+                    height: 12,
+                    width: 12,
+                    fill: isDark ? '#4D5356' : '#879097',
+                  })}
+                </>
+              )}
+            />
           </>
         )}
       </SafeAreaView>
@@ -547,7 +511,10 @@ export default class MusoraChat extends React.Component {
 
 const setStyles = isDark =>
   StyleSheet.create({
-    activityIndicator: { flex: 1, backgroundColor: isDark ? 'black' : 'white' },
+    activityIndicator: {
+      flex: 1,
+      backgroundColor: isDark ? 'black' : 'white'
+    },
     chatContainer: {
       flex: 1,
       backgroundColor: isDark ? '#00101D' : '#F2F3F5',
@@ -582,32 +549,5 @@ const setStyles = isDark =>
       paddingLeft: 15,
       color: isDark ? '#4D5356' : '#879097',
       fontFamily: 'OpenSans',
-    },
-    textInputContainer: {
-      flexDirection: 'row',
-      backgroundColor: isDark ? '#00101D' : '#F2F3F5',
-      alignItems: 'center',
-    },
-    textInput: {
-      padding: 10,
-      paddingTop: 10,
-      flex: 1,
-      color: isDark ? 'white' : 'black',
-    },
-    whiteBG: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: isDark ? 'black' : 'white',
-      flex: 1,
-      margin: 10,
-      borderRadius: 5,
-      overflow: 'hidden',
-    },
-    sendTouchable: {
-      height: 52,
-      width: 52,
-      position: 'absolute',
-      end: 0
     },
   });
