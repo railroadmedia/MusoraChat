@@ -22,10 +22,10 @@ import BlockedUsers from './BlockedUsers';
 import ListItem from './ListItem';
 
 import { sendMsg, x, arrowDown } from './svgs';
+import TabMenu from './TabMenu';
 
 let styles,
   isiOS = Platform.OS === 'ios';
-const tabs = ['CHAT', 'QUESTIONS'];
 export default class MusoraChat extends React.Component {
   state = {
     comment: '',
@@ -365,37 +365,12 @@ export default class MusoraChat extends React.Component {
           />
         ) : (
           <>
-            <View style={styles.tabMenu}>
-              {tabs.map((t, i) => (
-                <TouchableOpacity
-                  key={t}
-                  onPress={() => this.setState({ tabIndex: i }, () => this.floatingMenu?.close())}
-                  style={{
-                    padding: 10,
-                    marginHorizontal: 10,
-                    borderBottomWidth: 2,
-                    borderBottomColor:
-                      tabIndex === i ? (isDark ? 'white' : appColor) : 'transparent',
-                  }}
-                >
-                  <Text
-                    style={{
-                      color:
-                        tabIndex === i
-                          ? isDark
-                            ? 'white'
-                            : appColor
-                          : isDark
-                          ? '#445F74'
-                          : '#879097',
-                      fontFamily: 'OpenSans',
-                    }}
-                  >
-                    {t}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <TabMenu
+              isDark={isDark}
+              appColor={appColor}
+              tabIndex={tabIndex}
+              onTabChange={() => this.setState({ tabIndex: i }, () => this.floatingMenu?.close())}
+            />
             {pinned?.map(item => this.renderFLItem({ item }, true))}
             <View style={{ flex: 1 }}>
               <FlatList
@@ -576,10 +551,6 @@ const setStyles = isDark =>
     chatContainer: {
       flex: 1,
       backgroundColor: isDark ? '#00101D' : '#F2F3F5',
-    },
-    tabMenu: {
-      flexDirection: 'row',
-      alignItems: 'center',
     },
     flatList: {
       flex: 1,
