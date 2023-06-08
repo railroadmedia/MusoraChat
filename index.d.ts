@@ -1,5 +1,6 @@
 import React from 'react';
 import numberOfStreamWatchers from './src/watchersListener';
+import { Resource } from 'RNDownload';
 
 declare module "MusoraChat" {
   interface ChatProps {
@@ -8,12 +9,14 @@ declare module "MusoraChat" {
     clientId: string;
     isDark: boolean;
     onRemoveAllMessages: (userId: string) => void;
-    onToggleBlockStudent: (blockedUser: {banned: boolean; id: userId}) => void;
+    onToggleBlockStudent: (blockedUser: {banned: boolean; id: number}) => void;
     questionsId: string;
     user: {
       id: string;
       gsToken: string;
     }
+    resources: Resource[];
+    onResourcesPress: (resource: Resource) => void;
   }
   class MusoraChat extends React.Component<ChatProps, {}> {}
 

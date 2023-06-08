@@ -36,7 +36,7 @@ const TabMenu: FunctionComponent<ITabMenu> = props => {
                   : isDark
                   ? '#445F74'
                   : '#879097',
-              fontFamily: 'OpenSans',
+              fontFamily: 'BebasNeue',
             }}
           >
             {t}

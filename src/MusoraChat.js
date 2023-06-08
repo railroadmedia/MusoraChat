@@ -21,6 +21,7 @@ import ListItem from './ListItem';
 import { sendMsg, x, arrowDown } from './svgs';
 import TabMenu from './TabMenu';
 import TextBoxModal from './TextBoxModal';
+import ResourcesItem from './ResourcesItem';
 
 let styles,
   isiOS = Platform.OS === 'ios';
@@ -297,14 +298,14 @@ export default class MusoraChat extends React.Component {
       showScrollToTop,
     } = this.state;
     let channel = tabIndex ? 'questionsChannel' : 'chatChannel';
-    let { appColor, isDark } = this.props;
+    let { appColor, isDark, resources } = this.props;
     if (!loading && !showParticipants && !showBlocked) {
       var messages = this[channel]?.state?.messages
         .slice()
         .reverse()
         ?.filter(m => m?.type !== 'deleted' && !m?.user.banned);
       if (this[`${channel}PendingMsg`]) messages.unshift(this[`${channel}PendingMsg`]);
-      if (tabIndex) {
+      if (tabIndex === 0 || tabIndex === 1) {
         messages = Object.values(
           messages
             .sort((i, j) =>
@@ -369,96 +370,114 @@ export default class MusoraChat extends React.Component {
               tabIndex={tabIndex}
               onTabChange={(i) => this.setState({ tabIndex: i }, () => this.floatingMenu?.close())}
             />
-            {pinned?.map(item => this.renderFLItem({ item }, true))}
-            <View style={{ flex: 1 }}>
-              <FlatList
-                key={tabIndex}
-                inverted={isiOS}
-                onScroll={({
-                  nativeEvent: {
-                    contentOffset: { y },
-                  },
-                }) => {
-                  this.fListY = y >= 0 ? y : 0;
-                  this.setState(({ showScrollToTop: sstt }) => {
-                    if (y > 0 && !sstt) return { showScrollToTop: true };
-                    if (y <= 0 && sstt) return { showScrollToTop: false };
-                  });
-                }}
-                windowSize={10}
-                data={messages}
-                style={[
-                  styles.flatList,
-                  isiOS ? {} : { transform: [{ rotate: "180deg" }] },
-                ]}
-                initialNumToRender={1}
-                maxToRenderPerBatch={10}
-                onEndReachedThreshold={0.01}
-                removeClippedSubviews={true}
-                keyboardShouldPersistTaps='handled'
-                renderItem={this.renderFLItem}
-                onEndReached={this.loadMore}
-                keyExtractor={item => item.id.toString()}
-                ListEmptyComponent={
-                  <Text
+            {tabIndex === 2 ? (
+              <>
+                <FlatList
+                  renderItem={
+                    ({ item }) => (
+                      <ResourcesItem
+                        item={item}
+                        onPress={this.props.onResourcesPress}
+                        appColor={appColor}
+                      />
+                  )}
+                  data={resources}
+                />
+              </>
+            ) : (
+              <>
+                {pinned?.map(item => this.renderFLItem({ item }, true))}
+                <View style={{ flex: 1 }}>
+                  <FlatList
+                    key={tabIndex}
+                    inverted={isiOS}
+                    onScroll={({
+                      nativeEvent: {
+                        contentOffset: { y },
+                      },
+                    }) => {
+                      this.fListY = y >= 0 ? y : 0;
+                      this.setState(({ showScrollToTop: sstt }) => {
+                        if (y > 0 && !sstt) return { showScrollToTop: true };
+                        if (y <= 0 && sstt) return { showScrollToTop: false };
+                      });
+                    }}
+                    windowSize={10}
+                    data={messages}
                     style={[
-                      styles.emptyListText,
+                      styles.flatList,
                       isiOS ? {} : { transform: [{ rotate: "180deg" }] },
                     ]}
-                  >
-                    {tabIndex ? "No questions" : "Say Hi!"}
-                  </Text>
-                }
-                ListFooterComponent={
-                  <ActivityIndicator
-                    size='small'
-                    color={isDark ? 'white' : 'black'}
-                    animating={loadingMore}
-                    style={styles.activityIndicator}
+                    initialNumToRender={1}
+                    maxToRenderPerBatch={10}
+                    onEndReachedThreshold={0.01}
+                    removeClippedSubviews={true}
+                    keyboardShouldPersistTaps='handled'
+                    renderItem={this.renderFLItem}
+                    onEndReached={this.loadMore}
+                    keyExtractor={item => item.id.toString()}
+                    ListEmptyComponent={
+                      <Text
+                        style={[
+                          styles.emptyListText,
+                          isiOS ? {} : { transform: [{ rotate: "180deg" }] },
+                        ]}
+                      >
+                        {tabIndex ? "No questions" : "Say Hi!"}
+                      </Text>
+                    }
+                    ListFooterComponent={
+                      <ActivityIndicator
+                        size='small'
+                        color={isDark ? 'white' : 'black'}
+                        animating={loadingMore}
+                        style={styles.activityIndicator}
+                      />
+                    }
+                    ref={r => (this.flatList = r?.getNativeScrollRef())}
                   />
-                }
-                ref={r => (this.flatList = r?.getNativeScrollRef())}
-              />
-              {showScrollToTop && (
+                  {showScrollToTop && (
+                    <TouchableOpacity
+                      onPress={() => this.flatList.scrollTo({ y: 0 })}
+                      style={styles.scrollToTop}
+                    >
+                      {arrowDown({ width: '70%', fill: 'white' })}
+                    </TouchableOpacity>
+                  )}
+                </View>
                 <TouchableOpacity
-                  onPress={() => this.flatList.scrollTo({ y: 0 })}
-                  style={styles.scrollToTop}
+                  onPress={() => this.setState({ keyboardVisible: true }, this.floatingMenu?.close)}
+                  style={[
+                    styles.saySomethingTOpacity,
+                    {
+                      backgroundColor: keyboardVisible ? 'transparent' : isDark ? 'black' : 'white',
+                    },
+                  ]}
                 >
-                  {arrowDown({ width: '70%', fill: 'white' })}
+                  <Text
+                    style={[styles.placeHolderText, { opacity: keyboardVisible ? 0 : 1 }]}
+                    numberOfLines={1}
+                  >
+                    {this.editMessage
+                      ? comment
+                      : comment || `${tabIndex ? 'Ask a question' : 'Say something'}...`}
+                  </Text>
+                  <TouchableOpacity onPress={this.handleMessage} style={{ padding: 15 }}>
+                    {(this.editToBeCancelled ? x : sendMsg)({
+                      height: 12,
+                      width: 12,
+                      fill: keyboardVisible ? 'transparent' : isDark ? '#4D5356' : '#879097',
+                    })}
+                  </TouchableOpacity>
                 </TouchableOpacity>
-              )}
-            </View>
-            <TouchableOpacity
-              onPress={() => this.setState({ keyboardVisible: true }, this.floatingMenu?.close)}
-              style={[
-                styles.saySomethingTOpacity,
-                {
-                  backgroundColor: keyboardVisible ? 'transparent' : isDark ? 'black' : 'white',
-                },
-              ]}
-            >
-              <Text
-                style={[styles.placeHolderText, { opacity: keyboardVisible ? 0 : 1 }]}
-                numberOfLines={1}
-              >
-                {this.editMessage
-                  ? comment
-                  : comment || `${tabIndex ? 'Ask a question' : 'Say something'}...`}
-              </Text>
-              <TouchableOpacity onPress={this.handleMessage} style={{ padding: 15 }}>
-                {(this.editToBeCancelled ? x : sendMsg)({
-                  height: 12,
-                  width: 12,
-                  fill: keyboardVisible ? 'transparent' : isDark ? '#4D5356' : '#879097',
-                })}
-              </TouchableOpacity>
-            </TouchableOpacity>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={styles.chatEventsInfo}>
-                {tabIndex ? questionsViewers : chatViewers} Online
-              </Text>
-              <Text style={styles.chatEventsInfo}>{this.formatTypers()}</Text>
-            </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={styles.chatEventsInfo}>
+                    {tabIndex ? questionsViewers : chatViewers} Online
+                  </Text>
+                  <Text style={styles.chatEventsInfo}>{this.formatTypers()}</Text>
+                </View>
+              </>
+            )}
             <FloatingMenu
               isDark={isDark}
               appColor={appColor}

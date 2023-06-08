@@ -218,3 +218,25 @@ export const arrowDown = props => (
     />
   </Svg>
 );
+export const pdf = props => (
+  <Svg width={props.width} height={props.height} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <Path
+      d="M6.00016 8H10.0002M6.00016 10.6667H10.0002M11.3335 14H4.66683C3.93045 14 3.3335 13.403 3.3335 12.6667V3.33333C3.3335 2.59695 3.93045 2 4.66683 2H8.39069C8.5675 2 8.73707 2.07024 8.86209 2.19526L12.4716 5.80474C12.5966 5.92976 12.6668 6.09933 12.6668 6.27614V12.6667C12.6668 13.403 12.0699 14 11.3335 14Z"
+      stroke={props.fill}
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+export const download = props => (
+  <Svg width={props.width} height={props.height} viewBox="0 0 18 18" fill="none" >
+    <Path
+      d="M2.99988 12L2.99988 12.75C2.99988 13.9926 4.00724 15 5.24988 15L12.7499 15C13.9925 15 14.9999 13.9926 14.9999 12.75L14.9999 12M11.9999 9L8.99988 12M8.99988 12L5.99988 9M8.99988 12L8.99988 3"
+      stroke={props.fill}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
