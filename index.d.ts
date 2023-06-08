@@ -17,6 +17,7 @@ declare module "MusoraChat" {
     }
     resources: Resource[];
     onResourcesPress: (resource: Resource) => void;
+    isLandscape: boolean;
   }
   class MusoraChat extends React.Component<ChatProps, {}> {}
 
