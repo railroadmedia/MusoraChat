@@ -1,6 +1,7 @@
 import React, { FunctionComponent } from 'react';
 import { StyleProp, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { chat, questions, resources } from './svgs';
+import DeviceInfo from 'react-native-device-info';
 
 interface ITabMenu {
   tabIndex: number;
@@ -15,6 +16,11 @@ const tabs = [
   {title: 'QUESTIONS', icon: questions},
   {title: 'RESOURCES', icon: resources}
 ];
+
+const IS_TABLET = DeviceInfo.isTablet();
+
+const ICON_SIZE = IS_TABLET ? 20 : 14;
+
 const TabMenu: FunctionComponent<ITabMenu> = props => {
   const { tabIndex, onTabChange, isDark, appColor, isLandscape } = props;
 
@@ -38,7 +44,7 @@ const TabMenu: FunctionComponent<ITabMenu> = props => {
             }
           ]}
         >
-          {icon({height: 16, width: 16, fill: color})}
+          {icon({height: ICON_SIZE, width: ICON_SIZE, fill: color})}
           <Text style={[styles.text, {color: color}]}>
             {title}
           </Text>
@@ -55,7 +61,8 @@ const styles: StyleProp<any> =
       alignItems: 'center',
     },
     text: {
-      fontFamily: 'BebasNeue',
+      fontFamily: 'BebasNeue-Regular',
+      fontSize: ICON_SIZE,
       marginLeft: 3,
     },
     touchable: {
