@@ -40,6 +40,7 @@ export default class MusoraChat extends React.Component {
     tabIndex: 0,
     showScrollToTop: false,
     isHidden: [],
+    channel: 'chatChannel',
   };
 
   constructor(props) {
