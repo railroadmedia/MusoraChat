@@ -217,7 +217,7 @@ export default class MusoraChat extends React.Component {
       this.setState({ keyboardVisible: false, comment: '' });
       return delete this.editMessage;
     }
-    let channel = this.state.tabIndex ? 'questionsChannel' : 'chatChannel';
+    let { channel } = this.state;
     let { user } = this.client;
     this.commentTextInput?.clear();
     this[channel]?.stopTyping();
@@ -276,8 +276,7 @@ export default class MusoraChat extends React.Component {
 
   loadMore = () =>
     this.setState({ loadingMore: true }, async () => {
-      let { tabIndex } = this.state;
-      let channel = tabIndex ? 'questionsChannel' : 'chatChannel';
+      let { channel } = this.state;
       await this[channel].query({
         messages: { limit: 50, id_lt: this[channel].state.messages[0].id },
       });
@@ -296,9 +295,9 @@ export default class MusoraChat extends React.Component {
       showParticipants,
       tabIndex,
       showScrollToTop,
+      channel,
     } = this.state;
     let { isDark } = this.props;
-    let channel = tabIndex ? 'questionsChannel' : 'chatChannel';
     if (!loading && !showParticipants && !showBlocked) {
       var messages = this[channel]?.state?.messages
         .slice()
@@ -439,6 +438,7 @@ export default class MusoraChat extends React.Component {
       showBlocked,
       showParticipants,
       tabIndex,
+      channel,
     } = this.state;
     let { appColor, isDark, resources } = this.props;
     return (
@@ -476,7 +476,15 @@ export default class MusoraChat extends React.Component {
               appColor={appColor}
               tabIndex={tabIndex}
               isLandscape={this.props.isLandscape}
-              onTabChange={(i) => this.setState({ tabIndex: i }, () => this.floatingMenu?.close())}
+              onTabChange={
+                (i) =>
+                this.setState({
+                  tabIndex: i,
+                  channel: i === 1 ? 'questionsChannel' : 'chatChannel',
+                }, () => {
+                  this.floatingMenu?.close()
+                })
+              }
             />
             {tabIndex === 2 ? (
               <FlatList
