@@ -218,3 +218,58 @@ export const arrowDown = props => (
     />
   </Svg>
 );
+export const pdf = props => (
+  <Svg width={props.width} height={props.height} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <Path
+      d="M6.00016 8H10.0002M6.00016 10.6667H10.0002M11.3335 14H4.66683C3.93045 14 3.3335 13.403 3.3335 12.6667V3.33333C3.3335 2.59695 3.93045 2 4.66683 2H8.39069C8.5675 2 8.73707 2.07024 8.86209 2.19526L12.4716 5.80474C12.5966 5.92976 12.6668 6.09933 12.6668 6.27614V12.6667C12.6668 13.403 12.0699 14 11.3335 14Z"
+      stroke={props.fill}
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+export const download = props => (
+  <Svg width={props.width} height={props.height} viewBox="0 0 18 18" fill="none" >
+    <Path
+      d="M2.99988 12L2.99988 12.75C2.99988 13.9926 4.00724 15 5.24988 15L12.7499 15C13.9925 15 14.9999 13.9926 14.9999 12.75L14.9999 12M11.9999 9L8.99988 12M8.99988 12L5.99988 9M8.99988 12L8.99988 3"
+      stroke={props.fill}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+export const chat = props => (
+  <Svg width={props.width} height={props.height} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <Path
+      d="M5.33333 8.00002H5.34M8 8.00002H8.00667M10.6667 8.00002H10.6733M14 8.00002C14 10.9455 11.3137 13.3334 8 13.3334C6.97382 13.3334 6.00781 13.1044 5.16311 12.7007L2 13.3334L2.92999 10.8534C2.34104 10.0282 2 9.04954 2 8.00002C2 5.0545 4.68629 2.66669 8 2.66669C11.3137 2.66669 14 5.0545 14 8.00002Z"
+      stroke={props.fill}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+export const questions = props => (
+  <Svg width={props.width} height={props.height} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <Path
+      d="M5.48511 6C5.85118 5.22321 6.83895 4.66667 8.00004 4.66667C9.4728 4.66667 10.6667 5.5621 10.6667 6.66667C10.6667 7.59963 9.81496 8.38338 8.66285 8.6044C8.30125 8.67377 8.00004 8.96514 8.00004 9.33333M8 11.3333H8.00667M14 8C14 11.3137 11.3137 14 8 14C4.68629 14 2 11.3137 2 8C2 4.68629 4.68629 2 8 2C11.3137 2 14 4.68629 14 8Z"
+      stroke={props.fill}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+export const resources = props => (
+  <Svg width={props.width} height={props.height} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <Path
+      d="M8.00016 6.66667V10.6667M8.00016 10.6667L6.00016 8.66667M8.00016 10.6667L10.0002 8.66667M11.3335 14H4.66683C3.93045 14 3.3335 13.403 3.3335 12.6667V3.33333C3.3335 2.59695 3.93045 2 4.66683 2H8.39069C8.5675 2 8.73707 2.07024 8.86209 2.19526L12.4716 5.80474C12.5966 5.92976 12.6668 6.09933 12.6668 6.27614V12.6667C12.6668 13.403 12.0699 14 11.3335 14Z"
+      stroke={props.fill}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"/>
+  </Svg>
+);
+

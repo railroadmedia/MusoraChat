@@ -2,12 +2,9 @@ import React from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  KeyboardAvoidingView,
-  Modal,
   Platform,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -22,10 +19,12 @@ import BlockedUsers from './BlockedUsers';
 import ListItem from './ListItem';
 
 import { sendMsg, x, arrowDown } from './svgs';
+import TabMenu from './TabMenu';
+import TextBoxModal from './TextBoxModal';
+import ResourcesItem from './ResourcesItem';
 
 let styles,
   isiOS = Platform.OS === 'ios';
-const tabs = ['CHAT', 'QUESTIONS'];
 export default class MusoraChat extends React.Component {
   state = {
     comment: '',
@@ -41,6 +40,7 @@ export default class MusoraChat extends React.Component {
     tabIndex: 0,
     showScrollToTop: false,
     isHidden: [],
+    channel: 'chatChannel',
   };
 
   constructor(props) {
@@ -48,7 +48,7 @@ export default class MusoraChat extends React.Component {
     this.client = StreamChat.getInstance(this.props.clientId, {
       timeout: 10000,
     });
-    styles = setStyles(props.isDark);
+    styles = setStyles(props.isDark, props.appColor);
   }
 
   componentDidMount() {
@@ -218,7 +218,7 @@ export default class MusoraChat extends React.Component {
       this.setState({ keyboardVisible: false, comment: '' });
       return delete this.editMessage;
     }
-    let channel = this.state.tabIndex ? 'questionsChannel' : 'chatChannel';
+    let { channel } = this.state;
     let { user } = this.client;
     this.commentTextInput?.clear();
     this[channel]?.stopTyping();
@@ -277,15 +277,14 @@ export default class MusoraChat extends React.Component {
 
   loadMore = () =>
     this.setState({ loadingMore: true }, async () => {
-      let { tabIndex } = this.state;
-      let channel = tabIndex ? 'questionsChannel' : 'chatChannel';
+      let { channel } = this.state;
       await this[channel].query({
         messages: { limit: 50, id_lt: this[channel].state.messages[0].id },
       });
       this.setState({ loadingMore: false });
     });
 
-  render() {
+  renderChat = () => {
     let {
       chatViewers,
       comment,
@@ -297,16 +296,16 @@ export default class MusoraChat extends React.Component {
       showParticipants,
       tabIndex,
       showScrollToTop,
+      channel,
     } = this.state;
-    let channel = tabIndex ? 'questionsChannel' : 'chatChannel';
-    let { appColor, isDark } = this.props;
+    let { isDark } = this.props;
     if (!loading && !showParticipants && !showBlocked) {
       var messages = this[channel]?.state?.messages
         .slice()
         .reverse()
         ?.filter(m => m?.type !== 'deleted' && !m?.user.banned);
       if (this[`${channel}PendingMsg`]) messages.unshift(this[`${channel}PendingMsg`]);
-      if (tabIndex) {
+      if (tabIndex === 0 || tabIndex === 1) {
         messages = Object.values(
           messages
             .sort((i, j) =>
@@ -335,6 +334,114 @@ export default class MusoraChat extends React.Component {
         .slice(-2)
         .sort((i, j) => (i.pinned_at < j.pinned_at ? -1 : 1));
     }
+    return (
+      <>
+        {pinned?.map(item => this.renderFLItem({ item }, true))}
+        <View style={{ flex: 1 }}>
+          <FlatList
+            key={tabIndex}
+            inverted={isiOS}
+            onScroll={({
+              nativeEvent: {
+                contentOffset: { y },
+              },
+            }) => {
+              this.fListY = y >= 0 ? y : 0;
+              this.setState(({ showScrollToTop: sstt }) => {
+                if (y > 0 && !sstt) return { showScrollToTop: true };
+                if (y <= 0 && sstt) return { showScrollToTop: false };
+              });
+            }}
+            windowSize={10}
+            data={messages}
+            style={[
+              styles.flatList,
+              isiOS ? {} : { transform: [{ rotate: "180deg" }] },
+            ]}
+            initialNumToRender={1}
+            maxToRenderPerBatch={10}
+            onEndReachedThreshold={0.01}
+            removeClippedSubviews={true}
+            keyboardShouldPersistTaps='handled'
+            renderItem={this.renderFLItem}
+            onEndReached={this.loadMore}
+            keyExtractor={item => item.id.toString()}
+            ListEmptyComponent={
+              <Text
+                style={[
+                  styles.emptyListText,
+                  isiOS ? {} : { transform: [{ rotate: "180deg" }] },
+                ]}
+              >
+                {tabIndex ? "No questions" : "Say Hi!"}
+              </Text>
+            }
+            ListFooterComponent={
+              <ActivityIndicator
+                size='small'
+                color={isDark ? 'white' : 'black'}
+                animating={loadingMore}
+                style={styles.activityIndicator}
+              />
+            }
+            ref={r => (this.flatList = r?.getNativeScrollRef())}
+          />
+          {showScrollToTop && (
+            <TouchableOpacity
+              onPress={() => this.flatList.scrollTo({ y: 0 })}
+              style={styles.scrollToTop}
+            >
+              {arrowDown({ width: '70%', fill: 'white' })}
+            </TouchableOpacity>
+          )}
+        </View>
+        <TouchableOpacity
+          onPress={() => this.setState({ keyboardVisible: true }, this.floatingMenu?.close)}
+          style={[
+            styles.saySomethingTOpacity,
+            {
+              backgroundColor: keyboardVisible ? 'transparent' : isDark ? 'black' : 'white',
+            },
+          ]}
+        >
+          <Text
+            style={[styles.placeHolderText, { opacity: keyboardVisible ? 0 : 1 }]}
+            numberOfLines={1}
+          >
+            {this.editMessage
+              ? comment
+              : comment || `${tabIndex ? 'Ask a question' : 'Say something'}...`}
+          </Text>
+          <TouchableOpacity onPress={this.handleMessage} style={{ padding: 15 }}>
+            {(this.editToBeCancelled ? x : sendMsg)({
+              height: 12,
+              width: 12,
+              fill: keyboardVisible ? 'transparent' : isDark ? '#4D5356' : '#879097',
+            })}
+          </TouchableOpacity>
+        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <Text style={styles.chatEventsInfo}>
+            {tabIndex ? questionsViewers : chatViewers} Online
+          </Text>
+          <Text style={styles.chatEventsInfo}>{this.formatTypers()}</Text>
+        </View>
+      </>
+    )
+  };
+
+  render() {
+    let {
+      chatViewers,
+      keyboardVisible,
+      loading,
+      questionsViewers,
+      showBlocked,
+      showParticipants,
+      tabIndex,
+      channel,
+    } = this.state;
+    let { appColor, isDark, resources } = this.props;
     return (
       <SafeAreaView edges={['bottom']} style={styles.chatContainer}>
         {loading ? (
@@ -365,138 +472,34 @@ export default class MusoraChat extends React.Component {
           />
         ) : (
           <>
-            <View style={styles.tabMenu}>
-              {tabs.map((t, i) => (
-                <TouchableOpacity
-                  key={t}
-                  onPress={() => this.setState({ tabIndex: i }, () => this.floatingMenu?.close())}
-                  style={{
-                    padding: 10,
-                    marginHorizontal: 10,
-                    borderBottomWidth: 2,
-                    borderBottomColor:
-                      tabIndex === i ? (isDark ? 'white' : appColor) : 'transparent',
-                  }}
-                >
-                  <Text
-                    style={{
-                      color:
-                        tabIndex === i
-                          ? isDark
-                            ? 'white'
-                            : appColor
-                          : isDark
-                          ? '#445F74'
-                          : '#879097',
-                      fontFamily: 'OpenSans',
-                    }}
-                  >
-                    {t}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            {pinned?.map(item => this.renderFLItem({ item }, true))}
-            <View style={{ flex: 1 }}>
+            <TabMenu
+              isDark={isDark}
+              appColor={appColor}
+              tabIndex={tabIndex}
+              isLandscape={this.props.isLandscape}
+              onTabChange={
+                (i) =>
+                this.setState({
+                  tabIndex: i,
+                  channel: i === 1 ? 'questionsChannel' : 'chatChannel',
+                }, () => {
+                  this.floatingMenu?.close()
+                })
+              }
+            />
+            {tabIndex === 2 ? (
               <FlatList
-                key={tabIndex}
-                inverted={isiOS}
-                onScroll={({
-                  nativeEvent: {
-                    contentOffset: { y },
-                  },
-                }) => {
-                  this.fListY = y >= 0 ? y : 0;
-                  this.setState(({ showScrollToTop: sstt }) => {
-                    if (y > 0 && !sstt) return { showScrollToTop: true };
-                    if (y <= 0 && sstt) return { showScrollToTop: false };
-                  });
-                }}
-                windowSize={10}
-                data={messages}
-                style={[
-                  styles.flatList,
-                  isiOS ? {} : { transform: [{ rotate: "180deg" }] },
-                ]}
-                initialNumToRender={1}
-                maxToRenderPerBatch={10}
-                onEndReachedThreshold={0.01}
-                removeClippedSubviews={true}
-                keyboardShouldPersistTaps='handled'
-                renderItem={this.renderFLItem}
-                onEndReached={this.loadMore}
-                keyExtractor={item => item.id.toString()}
-                ListEmptyComponent={
-                  <Text
-                    style={[
-                      styles.emptyListText,
-                      isiOS ? {} : { transform: [{ rotate: "180deg" }] },
-                    ]}
-                  >
-                    {tabIndex ? "No questions" : "Say Hi!"}
-                  </Text>
-                }
-                ListFooterComponent={
-                  <ActivityIndicator
-                    size='small'
-                    color={isDark ? 'white' : 'black'}
-                    animating={loadingMore}
-                    style={styles.activityIndicator}
-                  />
-                }
-                ref={r => (this.flatList = r?.getNativeScrollRef())}
+                renderItem={
+                  ({ item }) => (
+                    <ResourcesItem
+                      item={item}
+                      onPress={this.props.onResourcesPress}
+                      appColor={appColor}
+                    />
+                )}
+                data={resources}
               />
-              {showScrollToTop && (
-                <TouchableOpacity
-                  onPress={() => this.flatList.scrollTo({ y: 0 })}
-                  style={{
-                    width: 30,
-                    aspectRatio: 1,
-                    position: 'absolute',
-                    alignSelf: 'center',
-                    bottom: 10,
-                    padding: 5,
-                    borderRadius: 15,
-                    backgroundColor: appColor,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  {arrowDown({ width: '70%', fill: 'white' })}
-                </TouchableOpacity>
-              )}
-            </View>
-            <TouchableOpacity
-              onPress={() => this.setState({ keyboardVisible: true }, this.floatingMenu?.close)}
-              style={[
-                styles.saySomethingTOpacity,
-                {
-                  backgroundColor: keyboardVisible ? 'transparent' : isDark ? 'black' : 'white',
-                },
-              ]}
-            >
-              <Text
-                style={[styles.placeHolderText, { opacity: keyboardVisible ? 0 : 1 }]}
-                numberOfLines={1}
-              >
-                {this.editMessage
-                  ? comment
-                  : comment || `${tabIndex ? 'Ask a question' : 'Say something'}...`}
-              </Text>
-              <TouchableOpacity onPress={this.handleMessage} style={{ padding: 15 }}>
-                {(this.editToBeCancelled ? x : sendMsg)({
-                  height: 12,
-                  width: 12,
-                  fill: keyboardVisible ? 'transparent' : isDark ? '#4D5356' : '#879097',
-                })}
-              </TouchableOpacity>
-            </TouchableOpacity>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={styles.chatEventsInfo}>
-                {tabIndex ? questionsViewers : chatViewers} Online
-              </Text>
-              <Text style={styles.chatEventsInfo}>{this.formatTypers()}</Text>
-            </View>
+            ) : this.renderChat()}
             <FloatingMenu
               isDark={isDark}
               appColor={appColor}
@@ -513,56 +516,22 @@ export default class MusoraChat extends React.Component {
               onParticipants={() => this.setState({ showParticipants: true })}
               onBlockedStudents={() => this.setState({ showBlocked: true })}
             />
-            <Modal
-              onRequestClose={() => this.setState({ keyboardVisible: false })}
+            <TextBoxModal
+              onClose={() => this.setState({ keyboardVisible: false })}
               onShow={() => setTimeout(() => this.commentTextInput?.focus(), isiOS ? 0 : 100)}
-              supportedOrientations={['portrait', 'landscape']}
-              transparent={true}
               visible={keyboardVisible}
-            >
-              <TouchableOpacity
-                style={{ flex: 1, justifyContent: 'flex-end' }}
-                onPress={() => this.setState({ keyboardVisible: false })}
-              >
-                <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'top']}>
-                  <KeyboardAvoidingView
-                    style={{ flex: 1, justifyContent: 'flex-end' }}
-                    behavior={isiOS ? 'padding' : ''}
-                  >
-                    <View style={styles.textInputContainer}>
-                      <View style={styles.whiteBG} >
-                        <TextInput
-                          fontFamily={'openSans'}
-                          multiline={true}
-                          blurOnSubmit={true}
-                          style={[styles.textInput]}
-                          onChangeText={cmnt => {
-                            this.setState({ comment: cmnt });
-                            this[channel]?.keystroke();
-                          }}
-                          placeholder={'Say something...'}
-                          onSubmitEditing={this.handleMessage}
-                          ref={r => (this.commentTextInput = r)}
-                          keyboardAppearance={isDark ? 'dark': 'light'}
-                          placeholderTextColor={isDark ? '#4D5356' : '#879097'}
-                          returnKeyType={'send'}
-                          value={comment}
-                        />
-                        <View onPress={this.handleMessage} style={{ padding: 15, backgroundColor: isDark ? 'black' : 'white' }}>
-                          {(this.editToBeCancelled ? x : sendMsg)({
-                            height: 12,
-                            width: 12,
-                            fill: isDark ? '#4D5356' : '#879097',
-                          })}
-                        </View>
-                      </View>
-
-                      <TouchableOpacity onPress={this.handleMessage} style={styles.sendTouchable} />
-                    </View>
-                  </KeyboardAvoidingView>
-                </SafeAreaView>
-              </TouchableOpacity>
-            </Modal>
+              isDark={isDark}
+              ref={r => (this.commentTextInput = r)}
+              icon={(
+                <>
+                  {(this.editToBeCancelled ? x : sendMsg)({
+                    height: 12,
+                    width: 12,
+                    fill: isDark ? '#4D5356' : '#879097',
+                  })}
+                </>
+              )}
+            />
           </>
         )}
       </SafeAreaView>
@@ -570,16 +539,15 @@ export default class MusoraChat extends React.Component {
   }
 }
 
-const setStyles = isDark =>
+const setStyles = (isDark, appColor) =>
   StyleSheet.create({
-    activityIndicator: { flex: 1, backgroundColor: isDark ? 'black' : 'white' },
+    activityIndicator: {
+      flex: 1,
+      backgroundColor: isDark ? 'black' : 'white'
+    },
     chatContainer: {
       flex: 1,
       backgroundColor: isDark ? '#00101D' : '#F2F3F5',
-    },
-    tabMenu: {
-      flexDirection: 'row',
-      alignItems: 'center',
     },
     flatList: {
       flex: 1,
@@ -612,31 +580,16 @@ const setStyles = isDark =>
       color: isDark ? '#4D5356' : '#879097',
       fontFamily: 'OpenSans',
     },
-    textInputContainer: {
-      flexDirection: 'row',
-      backgroundColor: isDark ? '#00101D' : '#F2F3F5',
-      alignItems: 'center',
-    },
-    textInput: {
-      padding: 10,
-      paddingTop: 10,
-      flex: 1,
-      color: isDark ? 'white' : 'black',
-    },
-    whiteBG: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: isDark ? 'black' : 'white',
-      flex: 1,
-      margin: 10,
-      borderRadius: 5,
-      overflow: 'hidden',
-    },
-    sendTouchable: {
-      height: 52,
-      width: 52,
+    scrollToTop: {
+      width: 30,
+      aspectRatio: 1,
       position: 'absolute',
-      end: 0
+      alignSelf: 'center',
+      bottom: 10,
+      padding: 5,
+      borderRadius: 15,
+      backgroundColor: appColor,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
   });
