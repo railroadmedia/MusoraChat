@@ -522,6 +522,8 @@ export default class MusoraChat extends React.Component {
               visible={keyboardVisible}
               isDark={isDark}
               ref={r => (this.commentTextInput = r)}
+              onSubmitEditing={this.handleMessage}
+              onChangeText={comment => this.setState({ comment })}
               icon={(
                 <>
                   {(this.editToBeCancelled ? x : sendMsg)({
