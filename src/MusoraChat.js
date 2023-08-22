@@ -150,6 +150,9 @@ export default class MusoraChat extends React.Component {
         [`${ti ? 'questions' : 'chat'}Typers`]: Array.from(ti ? qt : ct),
       });
     }
+    // This triggers re-rendering when receiving a message.
+    // Because it was not seeing the inner state of the channels.
+    this.setState({});
   };
 
   disconnectUser = async () => {
@@ -440,6 +443,7 @@ export default class MusoraChat extends React.Component {
       showParticipants,
       tabIndex,
       channel,
+      comment,
     } = this.state;
     let { appColor, isDark, resources } = this.props;
     return (
@@ -524,6 +528,7 @@ export default class MusoraChat extends React.Component {
               ref={r => (this.commentTextInput = r)}
               onSubmitEditing={this.handleMessage}
               onChangeText={comment => this.setState({ comment })}
+              comment={this.state.comment}
               icon={(
                 <>
                   {(this.editToBeCancelled ? x : sendMsg)({
