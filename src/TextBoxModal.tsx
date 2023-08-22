@@ -19,6 +19,7 @@ interface ITextBoxModal {
   onChangeText: (text: string) => void;
   onSubmitEditing: () => void;
   icon: React.Node;
+  isDark: boolean;
 }
 
 let isiOS = Platform.OS === 'ios';
@@ -52,7 +53,7 @@ const TextBoxModal: FunctionComponent<ITextBoxModal> = forwardRef((props, ref) =
         <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'top']}>
           <KeyboardAvoidingView
             style={{ flex: 1, justifyContent: 'flex-end' }}
-            behavior={isiOS ? 'padding' : ''}
+            behavior={isiOS ? 'padding' : undefined}
           >
             <View style={styles.textInputContainer}>
               <View style={styles.whiteBG} >
@@ -70,12 +71,11 @@ const TextBoxModal: FunctionComponent<ITextBoxModal> = forwardRef((props, ref) =
                   returnKeyType={'send'}
                   value={comment}
                 />
-                <View onPress={onSubmitEditing} style={{ padding: 15, backgroundColor: isDark ? 'black' : 'white' }}>
-                  {icon}
-                </View>
+              <TouchableOpacity onPress={onSubmitEditing} style={styles.sendTouchable} >
+                {icon}
+              </TouchableOpacity>
               </View>
 
-              <TouchableOpacity onPress={onSubmitEditing} style={styles.sendTouchable} />
             </View>
           </KeyboardAvoidingView>
         </SafeAreaView>
@@ -108,10 +108,8 @@ const localStyles: StyleProp<any> = isDark =>
       overflow: 'hidden',
     },
     sendTouchable: {
-      height: 52,
-      width: 52,
-      position: 'absolute',
-      end: 0
+      padding: 15,
+      backgroundColor: isDark ? 'black' : 'white'
     },
   });
 
