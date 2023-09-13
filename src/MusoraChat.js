@@ -120,10 +120,16 @@ export default class MusoraChat extends React.Component {
           let { messages } = this.chatChannel.state;
           messages[messages.length - 1].new = true;
         }
-        if (ti)
-          this.questionsChannel.state.messages.find(m => m.id === message.id).reaction_counts = {
-            upvote: 1,
-          };
+        if (ti) {
+          let msg = this.questionsChannel.state.messages.find(
+            (m) => m.id === message.id
+          );
+          if (msg) {
+            msg.reaction_counts = {
+              upvote: 1,
+            };
+          }
+        }
       } else {
         if (ti) {
           let msgToAddReact = this.questionsChannel.state.messages.find(m => m.id === message.id);
