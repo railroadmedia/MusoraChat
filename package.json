@@ -8,6 +8,6 @@
     "stream-chat": "^3.7.0",
     "react-native-android-keyboard-adjust": "^1.2.0",
     "RNDownload": "git+https://github.com/railroadmedia/RNDownload.git#master-musora-app",
-    "react-native-device-info": "^8"
+    "react-native-device-info": "^10.9.0"
   }
 }
