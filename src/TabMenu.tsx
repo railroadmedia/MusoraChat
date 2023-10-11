@@ -9,6 +9,7 @@ interface ITabMenu {
   isDark: boolean;
   appColor: string;
   isLandscape: boolean;
+  showResources: boolean;
 }
 
 const tabs = [
@@ -22,7 +23,7 @@ const IS_TABLET = DeviceInfo.isTablet();
 const ICON_SIZE = IS_TABLET ? 20 : 14;
 
 const TabMenu: FunctionComponent<ITabMenu> = props => {
-  const { tabIndex, onTabChange, isDark, appColor, isLandscape } = props;
+  const { tabIndex, onTabChange, isDark, appColor, isLandscape, showResources } = props;
 
   return (
     <View style={styles.tabMenu}>
@@ -32,6 +33,8 @@ const TabMenu: FunctionComponent<ITabMenu> = props => {
             isDark ? 'white' : appColor :
             isDark ? '#445F74' : '#879097';
         return (
+        !showResources && i === 2 ?
+          <></> :
         <TouchableOpacity
           key={title}
           onPress={() => onTabChange(i)}
