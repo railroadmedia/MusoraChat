@@ -487,6 +487,7 @@ export default class MusoraChat extends React.Component {
               appColor={appColor}
               tabIndex={tabIndex}
               isLandscape={this.props.isLandscape}
+              showResources={!!resources.length}
               onTabChange={
                 (i) =>
                 this.setState({
