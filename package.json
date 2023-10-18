@@ -9,5 +9,8 @@
     "react-native-android-keyboard-adjust": "^1.2.0",
     "RNDownload": "git+https://github.com/railroadmedia/RNDownload.git#master-musora-app",
     "react-native-device-info": "^10.9.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.29"
   }
 }
