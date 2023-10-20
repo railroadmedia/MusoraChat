@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import FloatingMenu from './FloatingMenu';
+import FloatingMenu, { IFloatingMenuRef } from './FloatingMenu';
 import ListItem from './ListItem';
 import { arrowLeft } from './svgs';
 
@@ -30,7 +30,7 @@ const BlockedUsers: FunctionComponent<BlockedusersProps> = props => {
 
   const styles = setStyles(isDark);
 
-  const floatingMenu = useRef<any>(null);
+  const floatingMenu = useRef<IFloatingMenuRef>(null);
   const flatList = useRef<any>(null);
   const itemHeight = useRef(0);
   const fListY = useRef(0);
@@ -66,7 +66,7 @@ const BlockedUsers: FunctionComponent<BlockedusersProps> = props => {
         center
         admin={admin}
         type={'banned'}
-        onTap={() => floatingMenu.current?.close?.()}
+        onTap={() => floatingMenu.current?.close()}
         onToggleBlockStudent={() => {
           let tempBlocked = { ...blocked };
           delete blocked[item.id];
@@ -149,8 +149,10 @@ const BlockedUsers: FunctionComponent<BlockedusersProps> = props => {
       )}
       <FloatingMenu
         admin={admin}
-        ref={r => (floatingMenu.current = r)}
+        ref={floatingMenu}
         onParticipants={onParticipants}
+        isDark={isDark}
+        appColor={appColor}
       />
     </>
   );
