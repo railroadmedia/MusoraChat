@@ -5,7 +5,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import FloatingMenu from './FloatingMenu';
 import ListItem from './ListItem';
@@ -18,7 +18,7 @@ export default class Participants extends React.Component {
     this.state = {
       loading: true,
       loadingMore: false,
-      onlineUsers: props.onlineUsers
+      onlineUsers: props.onlineUsers,
     };
     styles = setStyles(props.isDark);
   }
@@ -29,14 +29,8 @@ export default class Participants extends React.Component {
   }
 
   componentDidMount() {
-    this.props.channel?.on(
-      'user.watching.stop',
-      this.participantsStopEventListener
-    );
-    this.props.channel?.on(
-      'user.watching.start',
-      this.participantsStartEventListener
-    );
+    this.props.channel?.on('user.watching.stop', this.participantsStopEventListener);
+    this.props.channel?.on('user.watching.start', this.participantsStartEventListener);
     this.props.channel
       .query({ watchers: { limit: 100, offset: 0 } })
       .then(() => this.setState({ loading: false }));
@@ -52,7 +46,7 @@ export default class Participants extends React.Component {
       if (this.fListY)
         this.flatList.scrollTo({
           y: this.itemHeight + this.fListY,
-          animated: false
+          animated: false,
         });
     });
 
@@ -61,7 +55,7 @@ export default class Participants extends React.Component {
       if (this.fListY)
         this.flatList.scrollTo({
           y: this.fListY - this.itemHeight,
-          animated: false
+          animated: false,
         });
     });
 
@@ -82,8 +76,8 @@ export default class Participants extends React.Component {
         .query({
           watchers: {
             limit: 100,
-            offset: Object.keys(this.props.channel.state.watchers).length
-          }
+            offset: Object.keys(this.props.channel.state.watchers).length,
+          },
         })
         .then(() => this.setState({ loadingMore: false }));
     });
@@ -101,7 +95,7 @@ export default class Participants extends React.Component {
             {arrowLeft({
               height: 12,
               width: 12,
-              fill: isDark ? '#4D5356' : '#879097'
+              fill: isDark ? '#4D5356' : '#879097',
             })}
             <Text style={styles.titleText}>PARTICIPANTS</Text>
           </TouchableOpacity>
@@ -117,8 +111,8 @@ export default class Participants extends React.Component {
             windowSize={10}
             onScroll={({
               nativeEvent: {
-                contentOffset: { y }
-              }
+                contentOffset: { y },
+              },
             }) => (this.fListY = y >= 0 ? y : 0)}
             data={Object.values(this.props.channel.state.watchers)}
             style={styles.flatList}
@@ -130,9 +124,7 @@ export default class Participants extends React.Component {
             renderItem={this.renderFLItem}
             onEndReached={this.loadMore}
             keyExtractor={item => item.id.toString()}
-            ListEmptyComponent={
-              <Text style={styles.emptyListText}>No Participants</Text>
-            }
+            ListEmptyComponent={<Text style={styles.emptyListText}>No Participants</Text>}
             ListFooterComponent={
               <ActivityIndicator
                 size='small'
@@ -161,21 +153,21 @@ const setStyles = isDark =>
     activityindicator: { flex: 1, backgroundColor: isDark ? 'black' : 'white' },
     titleText: {
       color: isDark ? '#445F74' : '#879097',
-      fontFamily: 'OpenSans'
+      fontFamily: 'OpenSans',
     },
     flatList: {
       flex: 1,
-      backgroundColor: isDark ? 'black' : 'white'
+      backgroundColor: isDark ? 'black' : 'white',
     },
     onlineUsers: {
       padding: 10,
       paddingTop: 0,
       color: isDark ? '#445F74' : '#879097',
-      fontFamily: 'OpenSans'
+      fontFamily: 'OpenSans',
     },
     emptyListText: {
       padding: 10,
       textAlign: 'center',
-      color: isDark ? 'white' : 'black'
-    }
+      color: isDark ? 'white' : 'black',
+    },
   });
