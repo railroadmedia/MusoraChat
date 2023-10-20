@@ -35,7 +35,7 @@ const FloatingMenu: ForwardRefExoticComponent<IFloatingMenu & RefAttributes<IFlo
     const [maxWidth, setMaxWidth] = useState(0);
     const [modalVisible, setModalVisible] = useState(false);
 
-    const pickItem = (propAction: string) => {
+    const pickItem = useCallback((propAction: string) => {
       setMaxWidth(0);
       switch (propAction) {
         case 'onParticipants':
@@ -43,9 +43,10 @@ const FloatingMenu: ForwardRefExoticComponent<IFloatingMenu & RefAttributes<IFlo
         case 'onBlockedStudents':
           onBlockedStudents?.();
       }
-    };
+    }, []);
+
     useImperativeHandle(ref, () => ({
-      close: useCallback(() => setMaxWidth(0), []),
+      close: () => setMaxWidth(0),
     }));
 
     return (
