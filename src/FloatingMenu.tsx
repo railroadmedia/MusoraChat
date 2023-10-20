@@ -14,7 +14,7 @@ import { menu } from './svgs';
 interface IFloatingMenu {
   isDark: boolean;
   admin: boolean;
-  onParticipants: () => void;
+  onParticipants?: () => void;
   onBlockedStudents?: () => void;
   ref: any;
   onClearAllQuestions?: () => void;
@@ -39,7 +39,7 @@ const FloatingMenu: ForwardRefExoticComponent<IFloatingMenu & RefAttributes<IFlo
       setMaxWidth(0);
       switch (propAction) {
         case 'onParticipants':
-          onParticipants();
+          onParticipants?.();
         case 'onBlockedStudents':
           onBlockedStudents?.();
       }
