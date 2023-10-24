@@ -121,9 +121,7 @@ export default class MusoraChat extends React.Component {
           messages[messages.length - 1].new = true;
         }
         if (ti) {
-          let msg = this.questionsChannel.state.messages.find(
-            (m) => m.id === message.id
-          );
+          let msg = this.questionsChannel.state.messages.find(m => m.id === message.id);
           if (msg) {
             msg.reaction_counts = {
               upvote: 1,
@@ -146,9 +144,9 @@ export default class MusoraChat extends React.Component {
 
     if (type?.includes('watching') && watcher_count) {
       if (channel_id === this.props.questionsId) {
-        this.setState({questionViewers:watcher_count})
+        this.setState({ questionViewers: watcher_count });
       } else {
-        this.setState({chatViewers:watcher_count})
+        this.setState({ chatViewers: watcher_count });
       }
     }
     if (type?.includes('typing')) {
@@ -363,10 +361,7 @@ export default class MusoraChat extends React.Component {
             }}
             windowSize={10}
             data={messages}
-            style={[
-              styles.flatList,
-              isiOS ? {} : { transform: [{ rotate: "180deg" }] },
-            ]}
+            style={[styles.flatList, isiOS ? {} : { transform: [{ rotate: '180deg' }] }]}
             initialNumToRender={1}
             maxToRenderPerBatch={10}
             onEndReachedThreshold={0.01}
@@ -377,12 +372,9 @@ export default class MusoraChat extends React.Component {
             keyExtractor={item => item.id.toString()}
             ListEmptyComponent={
               <Text
-                style={[
-                  styles.emptyListText,
-                  isiOS ? {} : { transform: [{ rotate: "180deg" }] },
-                ]}
+                style={[styles.emptyListText, isiOS ? {} : { transform: [{ rotate: '180deg' }] }]}
               >
-                {tabIndex ? "No questions" : "Say Hi!"}
+                {tabIndex ? 'No questions' : 'Say Hi!'}
               </Text>
             }
             ListFooterComponent={
@@ -436,7 +428,7 @@ export default class MusoraChat extends React.Component {
           <Text style={styles.chatEventsInfo}>{this.formatTypers()}</Text>
         </View>
       </>
-    )
+    );
   };
 
   render() {
@@ -488,29 +480,32 @@ export default class MusoraChat extends React.Component {
               tabIndex={tabIndex}
               isLandscape={this.props.isLandscape}
               showResources={!!resources.length}
-              onTabChange={
-                (i) =>
-                this.setState({
-                  tabIndex: i,
-                  channel: i === 1 ? 'questionsChannel' : 'chatChannel',
-                }, () => {
-                  this.floatingMenu?.close()
-                })
+              onTabChange={i =>
+                this.setState(
+                  {
+                    tabIndex: i,
+                    channel: i === 1 ? 'questionsChannel' : 'chatChannel',
+                  },
+                  () => {
+                    this.floatingMenu?.close();
+                  }
+                )
               }
             />
             {tabIndex === 2 ? (
               <FlatList
-                renderItem={
-                  ({ item }) => (
-                    <ResourcesItem
-                      item={item}
-                      onPress={this.props.onResourcesPress}
-                      appColor={appColor}
-                    />
+                renderItem={({ item }) => (
+                  <ResourcesItem
+                    item={item}
+                    onPress={this.props.onResourcesPress}
+                    appColor={appColor}
+                  />
                 )}
                 data={resources}
               />
-            ) : this.renderChat()}
+            ) : (
+              this.renderChat()
+            )}
             <FloatingMenu
               isDark={isDark}
               appColor={appColor}
@@ -536,7 +531,7 @@ export default class MusoraChat extends React.Component {
               onSubmitEditing={this.handleMessage}
               onChangeText={comment => this.setState({ comment })}
               comment={this.state.comment}
-              icon={(
+              icon={
                 <>
                   {(this.editToBeCancelled ? x : sendMsg)({
                     height: 12,
@@ -544,7 +539,7 @@ export default class MusoraChat extends React.Component {
                     fill: isDark ? '#4D5356' : '#879097',
                   })}
                 </>
-              )}
+              }
             />
           </>
         )}
@@ -557,7 +552,7 @@ const setStyles = (isDark, appColor) =>
   StyleSheet.create({
     activityIndicator: {
       flex: 1,
-      backgroundColor: isDark ? 'black' : 'white'
+      backgroundColor: isDark ? 'black' : 'white',
     },
     chatContainer: {
       flex: 1,
