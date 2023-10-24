@@ -5,13 +5,14 @@
   "peerDependencies": {
     "react": "18.2.0",
     "react-native": "0.71.4",
-    "stream-chat": "^3.7.0",
     "react-native-android-keyboard-adjust": "^1.2.0",
-    "RNDownload": "git+https://github.com/railroadmedia/RNDownload.git#master-musora-app",
     "react-native-device-info": "^10.9.0",
-    "react-native-safe-area-context": "^3.4.1"
+    "react-native-safe-area-context": "^3.4.1",
+    "RNDownload": "git+https://github.com/railroadmedia/RNDownload.git#master-musora-app",
+    "stream-chat": "^3.7.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.29"
+    "@types/react": "^18.2.29",
+    "@types/react-native-android-keyboard-adjust": "^1.0.1"
   }
 }
