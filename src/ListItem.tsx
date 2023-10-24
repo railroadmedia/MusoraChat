@@ -19,28 +19,28 @@ import {
 import { pin, vote, close, coach, team, edge, lifetime } from './svgs';
 
 interface IListItem {
-  editing: boolean;
-  new: boolean;
-  reversed: boolean;
+  editing?: boolean;
+  new?: boolean;
+  reversed?: boolean;
   isDark: boolean;
   appColor: string;
   onTap: () => void;
-  own: boolean;
-  admin: boolean;
-  type: string;
-  pinned: boolean;
-  hidden: boolean;
+  own?: boolean;
+  admin?: boolean;
+  type?: string;
+  pinned?: boolean;
+  hidden?: boolean;
   center?: boolean;
   item: any;
-  onRemoveMessage: () => void;
-  onRemoveAllMessages: (id: string) => void;
-  onToggleBlockStudent: (user: any) => void;
-  onTogglePinMessage: () => void;
-  onToggleHidden: (id: string) => void;
-  onAnswered: () => void;
-  onToggleReact: () => void;
-  onEditMessage: () => void;
-  onLayout: (e: LayoutChangeEvent) => void;
+  onRemoveMessage?: () => void;
+  onRemoveAllMessages?: () => void;
+  onToggleBlockStudent?: () => void;
+  onTogglePinMessage?: () => void;
+  onToggleHidden?: (id: string) => void;
+  onAnswered?: () => void;
+  onToggleReact?: () => void;
+  onEditMessage?: () => void;
+  onLayout?: (e: LayoutChangeEvent) => void;
 }
 
 const ListItem: FunctionComponent<IListItem> = props => {
@@ -120,13 +120,13 @@ const ListItem: FunctionComponent<IListItem> = props => {
       setOptionsModalVisible(false);
       switch (nextModal) {
         case 'pin':
-          onTogglePinMessage();
+          onTogglePinMessage?.();
           break;
         case 'edit':
-          onEditMessage();
+          onEditMessage?.();
           break;
         case 'hide':
-          onToggleHidden(item.id);
+          onToggleHidden?.(item.id);
           break;
         default:
           setOptionsModalVisible(true);
@@ -144,16 +144,16 @@ const ListItem: FunctionComponent<IListItem> = props => {
 
       switch (propAction) {
         case 'onRemoveMessage':
-          onRemoveMessage();
+          onRemoveMessage?.();
           break;
         case 'onRemoveAllMessages':
-          onRemoveAllMessages(item.user.id);
+          onRemoveAllMessages?.();
           break;
         case 'onToggleBlockStudent':
-          onToggleBlockStudent(item.user);
+          onToggleBlockStudent?.();
           break;
         case 'onAnswered':
-          onAnswered();
+          onAnswered?.();
           break;
       }
     },
@@ -198,7 +198,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
       <TouchableOpacity
         onLayout={e => {
           if (position === 'absolute') setPosition('relative');
-          onLayout(e);
+          onLayout?.(e);
         }}
         style={[
           {
