@@ -126,6 +126,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
           onEditMessage?.();
           break;
         case 'hide':
+          setHideMessage(!hideMessage);
           onToggleHidden?.(item.id);
           break;
         case 'blockModalVisible':
@@ -142,7 +143,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
           break;
       }
     },
-    [onTogglePinMessage, onEditMessage, onToggleHidden, item]
+    [onTogglePinMessage, onEditMessage, onToggleHidden, item, hideMessage]
   );
 
   const hideAllModals = useCallback(() => {
