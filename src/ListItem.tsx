@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 
 import { pin, vote, close, coach, team, edge, lifetime } from './svgs';
+import ListItemModal from './ListItemModal';
 
 interface IListItem {
   editing?: boolean;
@@ -77,10 +78,9 @@ const ListItem: FunctionComponent<IListItem> = props => {
   const [answeredModalVisible, setAnsweredModalVisible] = useState(false);
   const [blockModalVisible, setBlockModalVisible] = useState(false);
   const [optionsModalVisible, setOptionsModalVisible] = useState(false);
-  const [pinModalVisible, setPinModalVisible] = useState(false);
   const [removeModalVisible, setRemoveModalVisible] = useState(false);
   const [removeAllModalVisible, setRemoveAllModalVisible] = useState(false);
-  const [userTagIcon, setUserTagIcon] = useState<React.FC | undefined>(undefined);
+  const [userTagIcon, setUserTagIcon] = useState<Element | undefined>(undefined);
   const [borderColor, setBorderColor] = useState('');
 
   useEffect(() => {
@@ -90,7 +90,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
     switch (aln) {
       case 'edge': {
         setBorderColor(appColor);
-        setUserTagIcon(edge);
+        setUserTagIcon(edge({ height: 4, fill: 'white' }));
         break;
       }
       case 'piano': {
@@ -99,17 +99,17 @@ const ListItem: FunctionComponent<IListItem> = props => {
       }
       case 'team': {
         setBorderColor('black');
-        setUserTagIcon(team);
+        setUserTagIcon(team({ height: 4, fill: 'white' }));
         break;
       }
       case 'lifetime': {
         setBorderColor('#07B3FF');
-        setUserTagIcon(lifetime);
+        setUserTagIcon(lifetime({ height: 4, fill: 'white' }));
         break;
       }
       case 'coach': {
         setBorderColor('#FAA300');
-        setUserTagIcon(coach);
+        setUserTagIcon(coach({ height: 4, fill: 'white' }));
         break;
       }
     }
@@ -128,69 +128,117 @@ const ListItem: FunctionComponent<IListItem> = props => {
         case 'hide':
           onToggleHidden?.(item.id);
           break;
-        default:
-          setOptionsModalVisible(true);
+        case 'blockModalVisible':
+          setBlockModalVisible(true);
+          break;
+        case 'answeredModalVisible':
+          setAnsweredModalVisible(true);
+          break;
+        case 'removeAllModalVisible':
+          setRemoveAllModalVisible(true);
+          break;
+        case 'removeModalVisible':
+          setRemoveModalVisible(true);
+          break;
       }
     },
     [onTogglePinMessage, onEditMessage, onToggleHidden, item]
   );
 
-  const confirm = useCallback(
-    (propAction: string) => {
-      setAnsweredModalVisible(false);
-      setBlockModalVisible(false);
-      setRemoveModalVisible(false);
-      setRemoveAllModalVisible(false);
+  const hideAllModals = useCallback(() => {
+    setAnsweredModalVisible(false);
+    setBlockModalVisible(false);
+    setRemoveModalVisible(false);
+    setRemoveAllModalVisible(false);
+  }, []);
 
-      switch (propAction) {
-        case 'onRemoveMessage':
+  const removeModal = useMemo(
+    () => (
+      <ListItemModal
+        appColor={appColor}
+        isDark={isDark}
+        visible={removeModalVisible}
+        msgComponent={
+          <Text style={styles.confirmModalText}>Are you sure you want to remove this message?</Text>
+        }
+        onCancel={() => setRemoveModalVisible(false)}
+        onConfirm={() => {
+          hideAllModals();
           onRemoveMessage?.();
-          break;
-        case 'onRemoveAllMessages':
-          onRemoveAllMessages?.();
-          break;
-        case 'onToggleBlockStudent':
-          onToggleBlockStudent?.();
-          break;
-        case 'onAnswered':
-          onAnswered?.();
-          break;
-      }
-    },
-    [onRemoveMessage, onRemoveAllMessages, onToggleBlockStudent, onAnswered, item]
+        }}
+      />
+    ),
+    [removeModalVisible, onRemoveMessage, hideAllModals, styles, appColor, isDark]
   );
 
-  const renderModal: (
-    msgComponent: ReactElement,
-    stateModal: string,
-    confirmAction: string,
-    confirmText?: string
-  ) => ReactElement = useCallback(
-    (msgComponent, stateModal, confirmAction, confirmText) => (
-      <Modal
-        transparent={true}
-        animationType={'slide'}
-        // visible={this.state[stateModal]}
-        // onRequestClose={() => this.setState({ [stateModal]: false })}
-      >
-        <TouchableOpacity
-          style={{ flex: 1, justifyContent: 'flex-end' }}
-          // onPress={() => this.setState({ [stateModal]: false })}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.pill} />
-            {msgComponent}
-            <TouchableOpacity
-              style={[styles.confirmationBtn, { backgroundColor: appColor }]}
-              onPress={() => confirm(confirmAction)}
-            >
-              <Text style={styles.confirmationBrnText}>{confirmText || 'CONFIRM'}</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+  const removeAllModal = useMemo(
+    () => (
+      <ListItemModal
+        appColor={appColor}
+        isDark={isDark}
+        visible={removeAllModalVisible}
+        msgComponent={
+          <Text style={styles.confirmModalText}>
+            Are you sure you want to delete all of{' '}
+            <Text style={{ fontFamily: 'OpenSans-Bold' }}>{item.user.displayName}</Text> messages?
+          </Text>
+        }
+        onCancel={() => setRemoveAllModalVisible(false)}
+        onConfirm={() => {
+          hideAllModals();
+          onRemoveAllMessages?.();
+        }}
+      />
     ),
-    []
+    [removeAllModalVisible, onRemoveAllMessages, hideAllModals, styles, appColor, isDark]
+  );
+
+  const blockModal = useMemo(
+    () => (
+      <ListItemModal
+        appColor={appColor}
+        isDark={isDark}
+        visible={blockModalVisible}
+        msgComponent={
+          <Text style={styles.confirmModalText}>
+            Are you sure you want to {item.user.banned ? 'unblock ' : 'block '}
+            <Text style={{ fontFamily: 'OpenSans-Bold' }}>{item.user.displayName}</Text>
+            {item.user.banned ? '?' : ' from this chat?'}
+          </Text>
+        }
+        onCancel={() => setBlockModalVisible(false)}
+        onConfirm={() => {
+          hideAllModals();
+          onToggleBlockStudent?.();
+        }}
+        confirmText={item.user.banned ? 'CONFIRM' : 'BLOCK'}
+      />
+    ),
+    [blockModalVisible, onToggleBlockStudent, hideAllModals, styles, appColor, isDark]
+  );
+
+  const answeredModal = useMemo(
+    () => (
+      <ListItemModal
+        appColor={appColor}
+        isDark={isDark}
+        visible={answeredModalVisible}
+        msgComponent={
+          <Text style={styles.confirmModalText}>
+            Are you sure you want to mark this question as answered?{`\n`}
+            <Text style={{ fontFamily: 'OpenSans-Bold' }}>
+              This will remove the question from the chat.
+            </Text>
+          </Text>
+        }
+        onCancel={() => setAnsweredModalVisible(false)}
+        onConfirm={() => {
+          hideAllModals();
+          onAnswered?.();
+        }}
+      />
+    ),
+    [answeredModalVisible, onAnswered, hideAllModals, styles, appColor, isDark]
   );
 
   return (
@@ -242,7 +290,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
               justifyContent: 'center',
             }}
           >
-            {userTagIcon?.({ height: 4, fill: 'white' })}
+            <>{userTagIcon}</>
           </View>
         </View>
         <View style={{ paddingLeft: 10, flex: 1 }}>
@@ -391,39 +439,10 @@ const ListItem: FunctionComponent<IListItem> = props => {
           </View>
         </TouchableOpacity>
       </Modal>
-      {renderModal(
-        <Text style={styles.confirmModalText}>Are you sure you want to remove this message?</Text>,
-        'removeModalVisible',
-        'onRemoveMessage'
-      )}
-      {renderModal(
-        <Text style={styles.confirmModalText}>
-          Are you sure you want to delete all of{' '}
-          <Text style={{ fontFamily: 'OpenSans-Bold' }}>{item.user.displayName}</Text> messages?
-        </Text>,
-        'removeAllModalVisible',
-        'onRemoveAllMessages'
-      )}
-      {renderModal(
-        <Text style={styles.confirmModalText}>
-          Are you sure you want to {item.user.banned ? 'unblock ' : 'block '}
-          <Text style={{ fontFamily: 'OpenSans-Bold' }}>{item.user.displayName}</Text>
-          {item.user.banned ? '?' : ' from this chat?'}
-        </Text>,
-        'blockModalVisible',
-        'onToggleBlockStudent',
-        item.user.banned ? 'CONFIRM' : 'BLOCK'
-      )}
-      {renderModal(
-        <Text style={styles.confirmModalText}>
-          Are you sure you want to mark this question as answered?{`\n`}
-          <Text style={{ fontFamily: 'OpenSans-Bold' }}>
-            This will remove the question from the chat.
-          </Text>
-        </Text>,
-        'answeredModalVisible',
-        'onAnswered'
-      )}
+      {removeModal}
+      {removeAllModal}
+      {blockModal}
+      {answeredModal}
     </>
   );
 };
