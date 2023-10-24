@@ -1,11 +1,4 @@
-import React, {
-  FunctionComponent,
-  ReactElement,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Image,
   LayoutChangeEvent,
@@ -113,7 +106,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
         break;
       }
     }
-  }, []);
+  }, [item, appColor]);
 
   const pickItem = useCallback(
     (nextModal: string) => {
