@@ -1,4 +1,4 @@
-import React, { FunctionComponent, forwardRef } from 'react';
+import React, { FunctionComponent, ReactNode, forwardRef } from 'react';
 import {
   StyleProp,
   StyleSheet,
@@ -18,73 +18,62 @@ interface ITextBoxModal {
   onShow: () => void;
   onChangeText: (text: string) => void;
   onSubmitEditing: () => void;
-  icon: React.Node;
+  icon: ReactNode;
   isDark: boolean;
 }
 
 let isiOS = Platform.OS === 'ios';
 
-const TextBoxModal: FunctionComponent<ITextBoxModal> = forwardRef((props, ref) => {
-  const {
-    onClose,
-    onShow,
-    visible,
-    isDark,
-    onChangeText,
-    onSubmitEditing,
-    comment,
-    icon,
-  } = props;
+const TextBoxModal: FunctionComponent<ITextBoxModal> = forwardRef<TextInput, ITextBoxModal>(
+  (props, ref) => {
+    const { onClose, onShow, visible, isDark, onChangeText, onSubmitEditing, comment, icon } =
+      props;
 
-  const styles = localStyles(isDark);
+    const styles = localStyles(isDark);
 
-  return (
-    <Modal
-      onRequestClose={onClose}
-      onShow={onShow}
-      supportedOrientations={['portrait', 'landscape']}
-      transparent={true}
-      visible={visible}
-    >
-      <TouchableOpacity
-        style={{ flex: 1, justifyContent: 'flex-end' }}
-        onPress={onClose}
+    return (
+      <Modal
+        onRequestClose={onClose}
+        onShow={onShow}
+        supportedOrientations={['portrait', 'landscape']}
+        transparent={true}
+        visible={visible}
       >
-        <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'top']}>
-          <KeyboardAvoidingView
-            style={{ flex: 1, justifyContent: 'flex-end' }}
-            behavior={isiOS ? 'padding' : undefined}
-          >
-            <View style={styles.textInputContainer}>
-              <View style={styles.whiteBG} >
-                <TextInput
-                  fontFamily={'openSans'}
-                  multiline={true}
-                  blurOnSubmit={true}
-                  style={[styles.textInput]}
-                  onChangeText={onChangeText}
-                  placeholder={'Say something...'}
-                  onSubmitEditing={onSubmitEditing}
-                  ref={ref}
-                  keyboardAppearance={isDark ? 'dark': 'light'}
-                  placeholderTextColor={isDark ? '#4D5356' : '#879097'}
-                  returnKeyType={'send'}
-                  value={comment}
-                />
-              <TouchableOpacity onPress={onSubmitEditing} style={styles.sendTouchable} >
-                {icon}
-              </TouchableOpacity>
+        <TouchableOpacity style={{ flex: 1, justifyContent: 'flex-end' }} onPress={onClose}>
+          <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'top']}>
+            <KeyboardAvoidingView
+              style={{ flex: 1, justifyContent: 'flex-end' }}
+              behavior={isiOS ? 'padding' : undefined}
+            >
+              <View style={styles.textInputContainer}>
+                <View style={styles.whiteBG}>
+                  <TextInput
+                    multiline={true}
+                    blurOnSubmit={true}
+                    style={[styles.textInput]}
+                    onChangeText={onChangeText}
+                    placeholder={'Say something...'}
+                    onSubmitEditing={onSubmitEditing}
+                    ref={ref}
+                    keyboardAppearance={isDark ? 'dark' : 'light'}
+                    placeholderTextColor={isDark ? '#4D5356' : '#879097'}
+                    returnKeyType={'send'}
+                    value={comment}
+                  />
+                  <TouchableOpacity onPress={onSubmitEditing} style={styles.sendTouchable}>
+                    {icon}
+                  </TouchableOpacity>
+                </View>
               </View>
+            </KeyboardAvoidingView>
+          </SafeAreaView>
+        </TouchableOpacity>
+      </Modal>
+    );
+  }
+);
 
-            </View>
-          </KeyboardAvoidingView>
-        </SafeAreaView>
-      </TouchableOpacity>
-    </Modal>
-  );
-});
-
-const localStyles: StyleProp<any> = isDark =>
+const localStyles: StyleProp<any> = (isDark: boolean) =>
   StyleSheet.create({
     textInputContainer: {
       flexDirection: 'row',
@@ -109,7 +98,7 @@ const localStyles: StyleProp<any> = isDark =>
     },
     sendTouchable: {
       padding: 15,
-      backgroundColor: isDark ? 'black' : 'white'
+      backgroundColor: isDark ? 'black' : 'white',
     },
   });
 
