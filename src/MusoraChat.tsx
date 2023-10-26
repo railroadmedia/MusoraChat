@@ -1,12 +1,4 @@
-import React, {
-  FunctionComponent,
-  RefAttributes,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -21,7 +13,6 @@ import {
 import AndroidKeyboardAdjust from 'react-native-android-keyboard-adjust';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  Message,
   StreamChat,
   UserResponse,
   Reaction,
@@ -284,11 +275,11 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
         pinned={pinned}
         hidden={pinned ? (hidden.find(id => id === item.id) ? true : false) : undefined}
         item={item}
-        onRemoveMessage={() => client?.deleteMessage(item.id).catch(e => {})}
+        onRemoveMessage={() => client?.deleteMessage(item.id).catch(() => {})}
         onRemoveAllMessages={() => onRemoveAllMessages(item.user.id)}
         onToggleBlockStudent={() => onToggleBlockStudent(item.user)}
         onTogglePinMessage={() => {
-          if (item.pinned) return client?.unpinMessage(item).catch(e => {});
+          if (item.pinned) return client?.unpinMessage(item).catch(() => {});
           chatChannel?.state.messages
             ?.filter((m: FormatMessageResponse) => m.pinned)
             .sort((i: FormatMessageResponse, j: FormatMessageResponse) =>
@@ -487,7 +478,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             text: comment,
             id: editMessage.id,
           })
-          .catch(e => {});
+          .catch(() => {});
       } else {
         const tempPending: any = {
           user,
