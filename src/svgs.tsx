@@ -126,8 +126,8 @@ export const x = ({ fill, width, height }: ISvg) => (
     />
   </Svg>
 );
-export const arrowDown = ({ fill, width, height }: ISvg) => (
-  <Svg viewBox='0 0 437 438' width={width} height={height}>
+export const arrowDown = ({ fill, width }: { width: string; fill: string }) => (
+  <Svg viewBox='0 0 437 438' style={{ width: width, aspectRatio: 437 / 438 }}>
     <Path
       fill={fill}
       d='M407.4499999046326,190.5 l22.2,22.2 c9.4,9.4 9.4,24.6 0,33.9 L235.34999990463257,441 c-9.4,9.4 -24.6,9.4 -33.9,0 L7.049999904632568,246.60000000000002 c-9.4,-9.4 -9.4,-24.6 0,-33.9 l22.2,-22.2 c9.5,-9.5 25,-9.3 34.3,0.4 L178.34999990463257,311.4 V24 c0,-13.3 10.7,-24 24,-24 h32 c13.3,0 24,10.7 24,24 v287.4 l114.8,-120.5 c9.3,-9.8 24.8,-10 34.3,-0.4 z'
