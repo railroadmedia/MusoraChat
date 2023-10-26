@@ -1,4 +1,4 @@
-import React, { FunctionComponent, ReactNode, forwardRef } from 'react';
+import React, { ReactNode, forwardRef } from 'react';
 import {
   StyleProp,
   StyleSheet,
@@ -24,54 +24,51 @@ interface ITextBoxModal {
 
 let isiOS = Platform.OS === 'ios';
 
-const TextBoxModal: FunctionComponent<ITextBoxModal> = forwardRef<TextInput, ITextBoxModal>(
-  (props, ref) => {
-    const { onClose, onShow, visible, isDark, onChangeText, onSubmitEditing, comment, icon } =
-      props;
+const TextBoxModal = forwardRef<TextInput, ITextBoxModal>((props, ref) => {
+  const { onClose, onShow, visible, isDark, onChangeText, onSubmitEditing, comment, icon } = props;
 
-    const styles = localStyles(isDark);
+  const styles = localStyles(isDark);
 
-    return (
-      <Modal
-        onRequestClose={onClose}
-        onShow={onShow}
-        supportedOrientations={['portrait', 'landscape']}
-        transparent={true}
-        visible={visible}
-      >
-        <TouchableOpacity style={{ flex: 1, justifyContent: 'flex-end' }} onPress={onClose}>
-          <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'top']}>
-            <KeyboardAvoidingView
-              style={{ flex: 1, justifyContent: 'flex-end' }}
-              behavior={isiOS ? 'padding' : undefined}
-            >
-              <View style={styles.textInputContainer}>
-                <View style={styles.whiteBG}>
-                  <TextInput
-                    multiline={true}
-                    blurOnSubmit={true}
-                    style={[styles.textInput]}
-                    onChangeText={onChangeText}
-                    placeholder={'Say something...'}
-                    onSubmitEditing={onSubmitEditing}
-                    ref={ref}
-                    keyboardAppearance={isDark ? 'dark' : 'light'}
-                    placeholderTextColor={isDark ? '#4D5356' : '#879097'}
-                    returnKeyType={'send'}
-                    value={comment}
-                  />
-                  <TouchableOpacity onPress={onSubmitEditing} style={styles.sendTouchable}>
-                    {icon}
-                  </TouchableOpacity>
-                </View>
+  return (
+    <Modal
+      onRequestClose={onClose}
+      onShow={onShow}
+      supportedOrientations={['portrait', 'landscape']}
+      transparent={true}
+      visible={visible}
+    >
+      <TouchableOpacity style={{ flex: 1, justifyContent: 'flex-end' }} onPress={onClose}>
+        <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'top']}>
+          <KeyboardAvoidingView
+            style={{ flex: 1, justifyContent: 'flex-end' }}
+            behavior={isiOS ? 'padding' : undefined}
+          >
+            <View style={styles.textInputContainer}>
+              <View style={styles.whiteBG}>
+                <TextInput
+                  multiline={true}
+                  blurOnSubmit={true}
+                  style={[styles.textInput]}
+                  onChangeText={onChangeText}
+                  placeholder={'Say something...'}
+                  onSubmitEditing={onSubmitEditing}
+                  ref={ref}
+                  keyboardAppearance={isDark ? 'dark' : 'light'}
+                  placeholderTextColor={isDark ? '#4D5356' : '#879097'}
+                  returnKeyType={'send'}
+                  value={comment}
+                />
+                <TouchableOpacity onPress={onSubmitEditing} style={styles.sendTouchable}>
+                  {icon}
+                </TouchableOpacity>
               </View>
-            </KeyboardAvoidingView>
-          </SafeAreaView>
-        </TouchableOpacity>
-      </Modal>
-    );
-  }
-);
+            </View>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </TouchableOpacity>
+    </Modal>
+  );
+});
 
 const localStyles: StyleProp<any> = (isDark: boolean) =>
   StyleSheet.create({
