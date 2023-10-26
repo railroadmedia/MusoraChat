@@ -18,7 +18,7 @@ interface IParticipans {
   appColor: string;
   admin: boolean;
   onlineUsers: number;
-  channel: Channel;
+  channel?: Channel;
   onBack: () => void;
   onBlockedStudents: () => void;
 }
@@ -47,11 +47,11 @@ const Participans: FunctionComponent<IParticipans> = props => {
   useEffect(() => {
     channel?.on('user.watching.stop', participantsStopEventListener);
     channel?.on('user.watching.start', participantsStartEventListener);
-    channel.query({ watchers: { limit: 100, offset: 0 } }).then(() => setLoading(false));
+    channel?.query({ watchers: { limit: 100, offset: 0 } }).then(() => setLoading(false));
 
     return () => {
-      channel.off(participantsStartEventListener);
-      channel.off(participantsStopEventListener);
+      channel?.off(participantsStartEventListener);
+      channel?.off(participantsStopEventListener);
     };
   }, []);
 
@@ -72,10 +72,10 @@ const Participans: FunctionComponent<IParticipans> = props => {
     ({ watcher_count }: { watcher_count?: number }) => {
       setOnlineUsers(watcher_count || 0);
       if (fListY.current) {
-        // flatList.scrollTo({
-        //   y: fListY.current - itemHeight.current,
-        //   animated: false,
-        // });
+        flatList.current?.scrollToOffset({
+          offset: fListY.current - itemHeight.current,
+          animated: false,
+        });
       }
     },
     []
@@ -101,7 +101,7 @@ const Participans: FunctionComponent<IParticipans> = props => {
     if (loadingMore) return;
     setLoadingMore(true);
     channel
-      .query({
+      ?.query({
         watchers: {
           limit: 100,
           offset: Object.keys(channel.state.watchers).length,
@@ -139,7 +139,7 @@ const Participans: FunctionComponent<IParticipans> = props => {
               contentOffset: { y },
             },
           }) => (fListY.current = y >= 0 ? y : 0)}
-          data={Object.values(channel.state.watchers)}
+          data={Object.values(channel?.state.watchers || {})}
           style={styles.flatList}
           initialNumToRender={5}
           maxToRenderPerBatch={10}
