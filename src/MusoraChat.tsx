@@ -40,7 +40,7 @@ interface IMusoraChat {
   clientId: string;
   isDark: boolean;
   onRemoveAllMessages: (userId: string) => void;
-  onToggleBlockStudent: (blockedUser: { banned: boolean; id: number }) => void;
+  onToggleBlockStudent: (blockedUser: { banned?: boolean; id: string }) => void;
   questionsId: string;
   user: {
     id: string;
@@ -249,10 +249,10 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
   }, []);
 
   const renderChatFLItem = useCallback(
-    ({ item }: any, pinned: boolean) => (
+    ({ item }: { item: FormatMessageResponse }, pinned: boolean) => (
       <ListItem
         editing={editMessage?.id === item.id}
-        new={item.new}
+        new={!!item.new}
         reversed={!isiOS && !pinned}
         isDark={isDark}
         appColor={appColor}
@@ -267,17 +267,19 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           }
         }}
         onTap={() => floatingMenu.current?.close?.()}
-        own={me?.displayName === item.user.displayName}
+        own={me?.displayName === item.user?.displayName}
         admin={me?.role === 'admin'}
         type={tabIndex ? 'question' : 'message'}
         pinned={pinned}
         hidden={pinned ? (hidden.find(id => id === item.id) ? true : false) : undefined}
         item={item}
-        onRemoveMessage={() => client?.deleteMessage(item.id).catch(() => {})}
-        onRemoveAllMessages={() => onRemoveAllMessages(item.user.id)}
-        onToggleBlockStudent={() => onToggleBlockStudent(item.user)}
+        onRemoveMessage={() => client?.deleteMessage(item.id || '').catch(() => {})}
+        onRemoveAllMessages={() => onRemoveAllMessages(item.user?.id || '')}
+        onToggleBlockStudent={() =>
+          item.user && item.user.banned !== undefined ? onToggleBlockStudent(item.user) : undefined
+        }
         onTogglePinMessage={() => {
-          if (item.pinned) return client?.unpinMessage(item).catch(() => {});
+          if (item.pinned) return client?.unpinMessage(item.id || '').catch(() => {});
           chatChannel?.state.messages
             ?.filter((m: FormatMessageResponse) => m.pinned)
             .sort((i: FormatMessageResponse, j: FormatMessageResponse) =>
@@ -296,14 +298,14 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
         }}
         onAnswered={() => client?.deleteMessage(item.id).catch(() => {})}
         onToggleReact={() => {
-          if (item.own_reactions.some((r: Reaction) => r.type === 'upvote'))
+          if (item.own_reactions?.some((r: Reaction) => r.type === 'upvote'))
             questionsChannel?.deleteReaction(item.id, 'upvote').catch(() => {});
           else questionsChannel?.sendReaction(item.id, { type: 'upvote' }).catch(() => {});
         }}
         onEditMessage={() => {
           setEditMessage(item);
           setKeyboardVisible(true);
-          setComment(item.text);
+          setComment(item.text || '');
         }}
       />
     ),
@@ -329,44 +331,47 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
   );
 
   const renderChat = useMemo(() => {
-    if (!loading && !showParticipants && !showBlocked) {
-      var messages = currentChannel?.state?.messages
-        .slice()
-        .reverse()
-        ?.filter((m: FormatMessageResponse) => m?.type !== 'deleted' && !m?.user?.banned);
+    var pinned: FormatMessageResponse[] = [];
+    var messages: FormatMessageResponse[] = [];
+    if (!loading && !showParticipants && !showBlocked && currentChannel !== undefined) {
+      messages = currentChannel.state?.messages || [];
+      // .slice()
+      // .reverse()
+      // ?.filter((m: FormatMessageResponse) => m.type !== 'deleted' && !m.user?.banned);
+      // console.log('render chat', currentChannel.state?.messages);
       const pendingMsg = channel === 'questionsChannel' ? questionPending : chatPending;
       if (pendingMsg) messages?.unshift(pendingMsg);
-      if (tabIndex === 0 || tabIndex === 1) {
-        // messages = Object.values(
-        //   messages?.sort((i: FormatMessageResponse, j: FormatMessageResponse) =>
-        //       (i.reaction_counts?.upvote || 0) < (j?.reaction_counts?.upvote || 0)||
-        //       i.reaction_counts?.upvote === undefined
-        //         ? -1
-        //         : 1
-        //     )
-        //     .reduce((r, a) => {
-        //       r[a.reaction_counts?.upvote] = r[a.reaction_counts?.upvote] || [];
-        //       r[a.reaction_counts?.upvote].push(a);
-        //       return r;
-        //     }, Object.create(null))
-        // )
-        //   .sort((i, j) =>
-        //     i[0].reaction_counts?.upvote < j[0]?.reaction_counts?.upvote ||
-        //     i[0].reaction_counts?.upvote === undefined
-        //       ? -1
-        //       : 1
-        //   )
-        //   .map((m: FormatMessageResponse) => m.sort((i, j) => (i.created_at > j?.created_at ? -1 : 1)))
-        //   .flat();
-      }
-      var pinned = messages
-        ?.filter((m: FormatMessageResponse) => m.pinned)
-        .slice(-2)
-        .sort((i, j) => ((i.pinned_at || 0) < (j.pinned_at || 0) ? -1 : 1));
+      // if (messages !== undefined && (tabIndex === 0 || tabIndex === 1)) {
+      //   messages = Object.values(
+      //     messages
+      //       .sort((i: FormatMessageResponse, j: FormatMessageResponse) =>
+      //         (i.reaction_counts?.upvote || 0) < (j?.reaction_counts?.upvote || 0) ||
+      //         i.reaction_counts?.upvote === undefined
+      //           ? -1
+      //           : 1
+      //       )
+      //       .reduce((r, a) => {
+      //         r[a.reaction_counts?.upvote] = r[a.reaction_counts?.upvote] || [];
+      //         r[a.reaction_counts?.upvote].push(a);
+      //         return r;
+      //       }, Object.create(null))
+      //     // ).sort((i, j) =>
+      //     //   i[0].reaction_counts?.upvote < j[0]?.reaction_counts?.upvote ||
+      //     //   i[0].reaction_counts?.upvote === undefined
+      //     //     ? -1
+      //     //     : 1
+      //   );
+      //   // .map((m: FormatMessageResponse) => m.sort((i, j) => (i.created_at > j?.created_at ? -1 : 1)))
+      //   // .flat();
+      // }
+      pinned = messages;
+      // .filter((m: FormatMessageResponse) => m.pinned)
+      // .slice(-2)
+      // .sort((i, j) => ((i.pinned_at || 0) < (j.pinned_at || 0) ? -1 : 1));
     }
     return (
       <>
-        {pinned?.map(item => renderChatFLItem({ item }, true))}
+        {pinned.map(item => renderChatFLItem({ item }, true))}
         <View style={{ flex: 1 }}>
           <FlatList
             key={tabIndex}
@@ -394,7 +399,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             keyboardShouldPersistTaps='handled'
             renderItem={info => renderChatFLItem(info, false)}
             onEndReached={loadMore}
-            keyExtractor={item => item.id.toString()}
+            keyExtractor={item => item.id}
             ListEmptyComponent={
               <Text
                 style={[styles.emptyListText, isiOS ? {} : { transform: [{ rotate: '180deg' }] }]}
@@ -457,7 +462,20 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
         </View>
       </>
     );
-  }, []);
+  }, [
+    showParticipants,
+    showBlocked,
+    tabIndex,
+    loading,
+    chatTypers,
+    questionsTypers,
+    hidden,
+    editMessage,
+    questionPending,
+    chatPending,
+    loading,
+  ]);
+
   const handleMessage = useCallback(() => {
     if (!client) return;
     if (editToBeCancelled) {
