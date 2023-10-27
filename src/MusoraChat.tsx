@@ -92,7 +92,10 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
 
   const [questionPending, setQuestionPendingMsg] = useState<any>();
   const [chatPending, setChatPendingMsg] = useState<any>();
+  const [editMessage, setEditMessage] = useState<any>();
 
+  const flatList = useRef<FlatList>(null);
+  const commentTextInput = useRef<TextInput>(null);
   const floatingMenu = useRef<IFloatingMenuRef>(null);
   const fListY = useRef(0);
 
@@ -244,11 +247,6 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     client?.off(clientEventListener);
     await client?.disconnectUser?.();
   }, []);
-
-  const [editMessage, setEditMessage] = useState<any>();
-
-  const flatList = useRef<FlatList>(null);
-  const commentTextInput = useRef<TextInput>(null);
 
   const renderChatFLItem = useCallback(
     ({ item }: any, pinned: boolean) => (
