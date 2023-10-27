@@ -99,54 +99,27 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
   const floatingMenu = useRef<IFloatingMenuRef>(null);
   const fListY = useRef(0);
 
-  useEffect(() => {
-    const tempClient = StreamChat.getInstance(clientId, {
-      timeout: 10000,
-    });
-    setClient(tempClient);
-    return () => {
-      client?.off(clientEventListener);
-      client?.disconnectUser();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isiOS) AndroidKeyboardAdjust?.setAdjustPan();
-    connectUser()
-      .then(getChannels)
-      .then(() => {
-        client?.on(clientEventListener);
-        setLoading(false);
-        // setChatViewers(chatChannel?.state.watcher_count);
-        // setQuestionsViewers(questionsChannel?.state.watcher_count);
-      });
-    return () => {
-      if (!isiOS) AndroidKeyboardAdjust?.setAdjustResize();
-      disconnectUser();
-    };
-  }, []);
-
-  const connectUser = async () => {
-    let { id, gsToken } = user;
-    try {
-      const tempMe = client?.user?.displayName
-        ? client.user
-        : (await client?.connectUser({ id: `${id}` }, gsToken))?.me;
-      setMe(tempMe);
-    } catch (e) {}
-  };
-
-  const getChannels = async () => {
-    let channels = await client?.queryChannels(
+  const getChannels = useCallback(async (): Promise<void> => {
+    const channels = await client?.queryChannels(
       {
         id: { $in: [chatId, questionsId] },
       },
       [{}],
       { message_limit: 200 }
     );
-    setChatChannel(channels?.find(channel => channel.id === chatId));
-    setQuestionsChannel(channels?.find(channel => channel.id === questionsId));
-  };
+    setChatChannel(channels?.find(ch => ch.id === chatId));
+    setQuestionsChannel(channels?.find(ch => ch.id === questionsId));
+  }, [chatId, client, questionsId]);
+
+  const connectUser = useCallback(async (): Promise<void> => {
+    const { id, gsToken } = user;
+    try {
+      const tempMe = client?.user?.displayName
+        ? client.user
+        : (await client?.connectUser({ id: `${id}` }, gsToken))?.me;
+      setMe(tempMe);
+    } catch (e) {}
+  }, [client, user]);
 
   const clientEventListener: ({
     type,
@@ -162,91 +135,152 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     channel_id?: string;
     reaction?: any;
     message?: any;
-  }) => void = useCallback(async ({ type, user, watcher_count, channel_id, reaction, message }) => {
-    if (type === 'health.check') return;
-    if (type?.includes('reaction') && reaction.type !== 'upvote') return;
+  }) => void = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-shadow
+    async ({ type, user, watcher_count, channel_id, reaction, message }) => {
+      if (type === 'health.check') {
+        return;
+      }
+      if (type?.includes('reaction') && reaction.type !== 'upvote') {
+        return;
+      }
 
-    let ct = new Set(chatTypers);
-    let qt = new Set(questionsTypers);
-    if (tabIndex && channel_id === questionsId) {
-      if (type === 'typing.start') qt.add(user.displayName);
-      if (type === 'typing.stop') qt.delete(user.displayName);
-    } else if (!tabIndex && channel_id === chatId) {
-      if (type === 'typing.start') ct.add(user.displayName);
-      if (type === 'typing.stop') ct.delete(user.displayName);
-    }
-    if (type?.match(/^(user.banned|user.unbanned|delete_user_messages)$/)) {
-      await getChannels();
-      if (client !== undefined && client?.user !== undefined) {
-        client.user.banned = user.banned;
+      const ct = new Set(chatTypers);
+      const qt = new Set(questionsTypers);
+      if (tabIndex && channel_id === questionsId) {
+        if (type === 'typing.start') {
+          qt.add(user.displayName);
+        }
+        if (type === 'typing.stop') {
+          qt.delete(user.displayName);
+        }
+      } else if (!tabIndex && channel_id === chatId) {
+        if (type === 'typing.start') {
+          ct.add(user.displayName);
+        }
+        if (type === 'typing.stop') {
+          ct.delete(user.displayName);
+        }
       }
-    }
-    if (type === 'message.new') {
-      if (user.id !== user.id) {
-        if (fListY && chatChannel) {
-          let { messages } = chatChannel?.state;
-          messages[messages.length - 1].new = true;
+      if (type?.match(/^(user.banned|user.unbanned|delete_user_messages)$/)) {
+        await getChannels();
+        if (client !== undefined && client?.user !== undefined) {
+          client.user.banned = user.banned;
         }
-        if (tabIndex) {
-          let msg = questionsChannel?.state.messages.find(
-            (m: FormatMessageResponse) => m.id === message.id
-          );
-          if (msg) {
-            msg.reaction_counts = {
-              upvote: 1,
-            };
-          }
-        }
-      } else {
-        if (tabIndex) {
-          let msgToAddReact = questionsChannel?.state.messages.find(
-            (m: FormatMessageResponse) => m.id === message.id
-          );
-          if (msgToAddReact) {
-            let now = new Date().toDateString();
-            msgToAddReact.own_reactions = [
-              { type: 'upvote', tbRemoved: true, created_at: now, updated_at: now },
-            ];
-            msgToAddReact.reaction_counts = { upvote: 1 };
-          }
-        }
-        tabIndex ? setQuestionPendingMsg(undefined) : setChatPendingMsg(undefined);
       }
-    }
-    if (tabIndex && type === 'reaction.new' && reaction.user_id === user.id) {
-      let message: FormatMessageResponse | undefined = questionsChannel?.state.messages.find(
-        (m: FormatMessageResponse) => m.id === reaction.message_id
-      );
-      if (message) {
-        message.own_reactions = message?.own_reactions?.filter(
-          (or: ReactionResponse<Reaction, User>) => !or.tbRemoved
+      if (type === 'message.new') {
+        if (user.id !== user.id) {
+          if (fListY && chatChannel) {
+            const { messages } = chatChannel?.state;
+            messages[messages.length - 1].new = true;
+          }
+          if (tabIndex) {
+            const msg = questionsChannel?.state.messages.find(
+              (m: FormatMessageResponse) => m.id === message.id
+            );
+            if (msg) {
+              msg.reaction_counts = {
+                upvote: 1,
+              };
+            }
+          }
+        } else {
+          if (tabIndex) {
+            const msgToAddReact = questionsChannel?.state.messages.find(
+              (m: FormatMessageResponse) => m.id === message.id
+            );
+            if (msgToAddReact) {
+              const now = new Date().toDateString();
+              msgToAddReact.own_reactions = [
+                { type: 'upvote', tbRemoved: true, created_at: now, updated_at: now },
+              ];
+              msgToAddReact.reaction_counts = { upvote: 1 };
+            }
+          }
+          tabIndex ? setQuestionPendingMsg(undefined) : setChatPendingMsg(undefined);
+        }
+      }
+      if (tabIndex && type === 'reaction.new' && reaction.user_id === user.id) {
+        const msg: FormatMessageResponse | undefined = questionsChannel?.state.messages.find(
+          (m: FormatMessageResponse) => m.id === reaction.message_id
         );
+        if (msg) {
+          msg.own_reactions = msg?.own_reactions?.filter(
+            (or: ReactionResponse<Reaction, User>) => !or.tbRemoved
+          );
+        }
       }
-    }
 
-    if (type?.includes('watching') && watcher_count) {
-      if (channel_id === questionsId) {
-        setQuestionsViewers(watcher_count);
-      } else {
-        setChatViewers(watcher_count);
+      if (type?.includes('watching') && watcher_count) {
+        if (channel_id === questionsId) {
+          setQuestionsViewers(watcher_count);
+        } else {
+          setChatViewers(watcher_count);
+        }
       }
-    }
-    if (type?.includes('typing')) {
-      if (tabIndex) {
-        setQuestionsTypers(Array.from(qt));
-      } else {
-        setChatTypers(Array.from(ct));
+      if (type?.includes('typing')) {
+        if (tabIndex) {
+          setQuestionsTypers(Array.from(qt));
+        } else {
+          setChatTypers(Array.from(ct));
+        }
       }
-    }
-    // This triggers re-rendering when receiving a message.
-    // Because it was not seeing the inner state of the channels.
-    // setState({});
-  }, []);
+      // This triggers re-rendering when receiving a message.
+      // Because it was not seeing the inner state of the channels.
+      // setState({});
+    },
+    [
+      chatChannel,
+      chatId,
+      chatTypers,
+      client,
+      getChannels,
+      questionsChannel?.state.messages,
+      questionsId,
+      questionsTypers,
+      tabIndex,
+    ]
+  );
 
   const disconnectUser = useCallback(async () => {
     client?.off(clientEventListener);
     await client?.disconnectUser?.();
-  }, []);
+  }, [client, clientEventListener]);
+
+  useEffect(() => {
+    // console.log('length', chatChannel?.state.messages.length);
+  }, [chatChannel]);
+
+  useEffect(() => {
+    const tempClient = StreamChat.getInstance(clientId, {
+      timeout: 10000,
+    });
+    setClient(tempClient);
+    return () => {
+      client?.off(clientEventListener);
+      client?.disconnectUser();
+    };
+  }, [client, clientEventListener, clientId]);
+
+  useEffect(() => {
+    if (!isiOS) {
+      AndroidKeyboardAdjust?.setAdjustPan();
+    }
+    connectUser()
+      .then(getChannels)
+      .then(() => {
+        client?.on(clientEventListener);
+        setLoading(false);
+        // setChatViewers(chatChannel?.state.watcher_count);
+        // setQuestionsViewers(questionsChannel?.state.watcher_count);
+      });
+    return () => {
+      if (!isiOS) {
+        AndroidKeyboardAdjust?.setAdjustResize();
+      }
+      disconnectUser();
+    };
+  }, [client, clientEventListener, connectUser, disconnectUser, getChannels, isiOS]);
 
   const renderChatFLItem = useCallback(
     ({ item }: { item: FormatMessageResponse }, pinned: boolean) => (
@@ -279,7 +313,9 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           item.user && item.user.banned !== undefined ? onToggleBlockStudent(item.user) : undefined
         }
         onTogglePinMessage={() => {
-          if (item.pinned) return client?.unpinMessage(item.id || '').catch(() => {});
+          if (item.pinned) {
+            return client?.unpinMessage(item.id || '').catch(() => {});
+          }
           chatChannel?.state.messages
             ?.filter((m: FormatMessageResponse) => m.pinned)
             .sort((i: FormatMessageResponse, j: FormatMessageResponse) =>
@@ -290,17 +326,19 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           client?.pinMessage(item).catch(() => {});
         }}
         onToggleHidden={id => {
-          if (hidden.find(id => item.id === id)) {
-            setHidden(hidden.filter(id => id !== item.id));
+          if (hidden.find(hiddenId => item.id === hiddenId)) {
+            setHidden(hidden.filter(hiddenId => hiddenId !== item.id));
           } else {
             setHidden([...hidden, id]);
           }
         }}
         onAnswered={() => client?.deleteMessage(item.id).catch(() => {})}
         onToggleReact={() => {
-          if (item.own_reactions?.some((r: Reaction) => r.type === 'upvote'))
+          if (item.own_reactions?.some((r: Reaction) => r.type === 'upvote')) {
             questionsChannel?.deleteReaction(item.id, 'upvote').catch(() => {});
-          else questionsChannel?.sendReaction(item.id, { type: 'upvote' }).catch(() => {});
+          } else {
+            questionsChannel?.sendReaction(item.id, { type: 'upvote' }).catch(() => {});
+          }
         }}
         onEditMessage={() => {
           setEditMessage(item);
@@ -309,12 +347,27 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
         }}
       />
     ),
-    []
+    [
+      appColor,
+      chatChannel?.state.messages,
+      client,
+      editMessage?.id,
+      hidden,
+      isDark,
+      isiOS,
+      me,
+      onRemoveAllMessages,
+      onToggleBlockStudent,
+      questionsChannel,
+      tabIndex,
+    ]
   );
 
   const formatTypers = useMemo(() => {
-    // let typers = tabIndex ? questionsTypers : chatTypers;
-    // if (!typers.length) return '';
+    const typers = tabIndex ? questionsTypers : chatTypers;
+    if (!typers.length) {
+      return '';
+    }
     // let firstTwo = typers.slice(0, 2).concat(typers.length < 3 ? ' And ' : ', ');
     // let remaining = typers.slice(2, typers.length);
     // remaining = remaining.length
@@ -323,24 +376,90 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     // let endString = ` ${typers.length < 2 ? 'Is' : 'Are'} Typing`;
     // return firstTwo + remaining + endString;
     return 'TYPERS NOT IMPLEMENTED';
-  }, []);
+  }, [chatTypers, questionsTypers, tabIndex]);
 
   const currentChannel = useMemo(
     () => (channel === 'questionsChannel' ? questionsChannel : chatChannel),
-    [channel]
+    [channel, chatChannel, questionsChannel]
   );
 
+  const editToBeCancelled = useMemo(
+    () => editMessage?.text === comment || (editMessage && !comment),
+    [editMessage, comment]
+  );
+
+  const handleMessage = useCallback(() => {
+    if (!client) {
+      return;
+    }
+    if (editToBeCancelled) {
+      setKeyboardVisible(false);
+      setComment('');
+      setEditMessage(undefined);
+    }
+    const { user } = client;
+    commentTextInput.current?.clear();
+    currentChannel?.stopTyping();
+    if (comment && !user?.banned) {
+      if (editMessage) {
+        editMessage.text = comment;
+        client
+          ?.updateMessage({
+            text: comment,
+            id: editMessage.id,
+          })
+          .catch(() => {});
+      } else {
+        const tempPending: any = {
+          user,
+          text: comment,
+          id: 1,
+          created_at: new Date(),
+        };
+        if (channel === 'questionsChannel') {
+          tempPending.own_reactions = [{ type: 'upvote', tbRemoved: true }];
+          tempPending.reaction_counts = { upvote: 1 };
+        }
+        channel === 'questionsChannel'
+          ? setQuestionPendingMsg(tempPending)
+          : setChatPendingMsg(tempPending);
+        flatList.current?.scrollToOffset({ offset: 0, animated: true });
+        currentChannel
+          ?.sendMessage({ text: comment })
+          .then(({ message: { id } }: { message: MessageResponse }) => {
+            if (channel === 'questionsChannel') {
+              questionsChannel?.sendReaction(id, { type: 'upvote' }).catch(() => {});
+            }
+          })
+          .catch(() => {});
+      }
+    }
+    setEditMessage(undefined);
+    setKeyboardVisible(false);
+    setComment('');
+  }, [channel, client, comment, currentChannel, editMessage, editToBeCancelled, questionsChannel]);
+
+  const loadMore = useCallback(async () => {
+    setLoadingMore(true);
+    await currentChannel?.query({
+      messages: { limit: 50, id_lt: currentChannel.state.messages[0].id },
+    });
+    setLoadingMore(false);
+  }, [currentChannel]);
+
   const renderChat = useMemo(() => {
-    var pinned: FormatMessageResponse[] = [];
-    var messages: FormatMessageResponse[] = [];
+    let pinned: FormatMessageResponse[] = [];
+    let messages: FormatMessageResponse[] = [];
     if (!loading && !showParticipants && !showBlocked && currentChannel !== undefined) {
-      messages = currentChannel.state?.messages || [];
-      // .slice()
-      // .reverse()
-      // ?.filter((m: FormatMessageResponse) => m.type !== 'deleted' && !m.user?.banned);
+      messages = (currentChannel.state?.messages || [])
+        .slice()
+        .reverse()
+        .filter((m: FormatMessageResponse) => m.type !== 'deleted' && !m.user?.banned);
       // console.log('render chat', currentChannel.state?.messages);
       const pendingMsg = channel === 'questionsChannel' ? questionPending : chatPending;
-      if (pendingMsg) messages?.unshift(pendingMsg);
+      if (pendingMsg) {
+        messages?.unshift(pendingMsg);
+      }
       // if (messages !== undefined && (tabIndex === 0 || tabIndex === 1)) {
       //   messages = Object.values(
       //     messages
@@ -364,10 +483,10 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       //   // .map((m: FormatMessageResponse) => m.sort((i, j) => (i.created_at > j?.created_at ? -1 : 1)))
       //   // .flat();
       // }
-      pinned = messages;
-      // .filter((m: FormatMessageResponse) => m.pinned)
-      // .slice(-2)
-      // .sort((i, j) => ((i.pinned_at || 0) < (j.pinned_at || 0) ? -1 : 1));
+      pinned = messages
+        .filter((m: FormatMessageResponse) => m.pinned)
+        .slice(-2)
+        .sort((i, j) => ((i.pinned_at || 0) < (j.pinned_at || 0) ? -1 : 1));
     }
     return (
       <>
@@ -463,80 +582,34 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       </>
     );
   }, [
+    loading,
     showParticipants,
     showBlocked,
+    currentChannel,
     tabIndex,
-    loading,
-    chatTypers,
-    questionsTypers,
-    hidden,
+    isiOS,
+    styles,
+    loadMore,
+    isDark,
+    loadingMore,
+    showScrollToTop,
+    keyboardVisible,
     editMessage,
+    comment,
+    handleMessage,
+    editToBeCancelled,
+    questionsViewers,
+    chatViewers,
+    formatTypers,
+    channel,
     questionPending,
     chatPending,
-    loading,
+    renderChatFLItem,
   ]);
 
-  const handleMessage = useCallback(() => {
-    if (!client) return;
-    if (editToBeCancelled) {
-      setKeyboardVisible(false);
-      setComment('');
-      setEditMessage(undefined);
-    }
-    let { user } = client;
-    commentTextInput.current?.clear();
-    currentChannel?.stopTyping();
-    if (comment && !user?.banned) {
-      if (editMessage) {
-        editMessage.text = comment;
-        client
-          ?.updateMessage({
-            text: comment,
-            id: editMessage.id,
-          })
-          .catch(() => {});
-      } else {
-        const tempPending: any = {
-          user,
-          text: comment,
-          id: 1,
-          created_at: new Date(),
-        };
-        if (channel === 'questionsChannel') {
-          tempPending.own_reactions = [{ type: 'upvote', tbRemoved: true }];
-          tempPending.reaction_counts = { upvote: 1 };
-        }
-        channel === 'questionsChannel'
-          ? setQuestionPendingMsg(tempPending)
-          : setChatPendingMsg(tempPending);
-        flatList.current?.scrollToOffset({ offset: 0, animated: true });
-        currentChannel
-          ?.sendMessage({ text: comment })
-          .then(({ message: { id } }: { message: MessageResponse }) => {
-            if (channel === 'questionsChannel') {
-              questionsChannel?.sendReaction(id, { type: 'upvote' }).catch(() => {});
-            }
-          })
-          .catch(() => {});
-      }
-    }
-    setEditMessage(undefined);
-    setKeyboardVisible(false);
-    setComment('');
-  }, []);
-
-  const editToBeCancelled = useMemo(
-    () => editMessage?.text === comment || (editMessage && !comment),
-    [editMessage, comment]
-  );
-
-  const loadMore = useCallback(async () => {
-    setLoadingMore(true);
-    await currentChannel?.query({
-      messages: { limit: 50, id_lt: currentChannel.state.messages[0].id },
-    });
-    setLoadingMore(false);
-  }, []);
+  // useEffect(() => {
+  //   console.log(comment);
+  // }, [comment]);
 
   return (
     <SafeAreaView edges={['bottom']} style={styles.chatContainer}>
