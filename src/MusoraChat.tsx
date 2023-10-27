@@ -623,12 +623,6 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
 
 export default MusoraChat;
 
-// export default class MusoraChat extends React.Component {
-
-//   renderChat = () => {
-//   };
-// }
-
 const setStyles = (isDark: boolean, appColor: string) =>
   StyleSheet.create({
     activityIndicator: {
