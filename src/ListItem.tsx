@@ -3,6 +3,7 @@ import {
   Image,
   LayoutChangeEvent,
   Modal,
+  StyleProp,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -77,6 +78,9 @@ const ListItem: FunctionComponent<IListItem> = props => {
   const [borderColor, setBorderColor] = useState('');
 
   useEffect(() => {
+    if (!item || !item.user) {
+      return;
+    }
     const {
       user: { accessLevelName: aln },
     } = item;
@@ -174,7 +178,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
         msgComponent={
           <Text style={styles.confirmModalText}>
             Are you sure you want to delete all of{' '}
-            <Text style={{ fontFamily: 'OpenSans-Bold' }}>{item.user.displayName}</Text> messages?
+            <Text style={{ fontFamily: 'OpenSans-Bold' }}>{item.user?.displayName}</Text> messages?
           </Text>
         }
         onCancel={() => setRemoveAllModalVisible(false)}
@@ -184,7 +188,15 @@ const ListItem: FunctionComponent<IListItem> = props => {
         }}
       />
     ),
-    [removeAllModalVisible, onRemoveAllMessages, hideAllModals, styles, appColor, isDark]
+    [
+      appColor,
+      isDark,
+      removeAllModalVisible,
+      styles.confirmModalText,
+      item.user?.displayName,
+      hideAllModals,
+      onRemoveAllMessages,
+    ]
   );
 
   const blockModal = useMemo(
@@ -195,9 +207,9 @@ const ListItem: FunctionComponent<IListItem> = props => {
         visible={blockModalVisible}
         msgComponent={
           <Text style={styles.confirmModalText}>
-            Are you sure you want to {item.user.banned ? 'unblock ' : 'block '}
-            <Text style={{ fontFamily: 'OpenSans-Bold' }}>{item.user.displayName}</Text>
-            {item.user.banned ? '?' : ' from this chat?'}
+            Are you sure you want to {item.user?.banned ? 'unblock ' : 'block '}
+            <Text style={{ fontFamily: 'OpenSans-Bold' }}>{item.user?.displayName}</Text>
+            {item.user?.banned ? '?' : ' from this chat?'}
           </Text>
         }
         onCancel={() => setBlockModalVisible(false)}
@@ -205,10 +217,19 @@ const ListItem: FunctionComponent<IListItem> = props => {
           hideAllModals();
           onToggleBlockStudent?.();
         }}
-        confirmText={item.user.banned ? 'CONFIRM' : 'BLOCK'}
+        confirmText={item.user?.banned ? 'CONFIRM' : 'BLOCK'}
       />
     ),
-    [blockModalVisible, onToggleBlockStudent, hideAllModals, styles, appColor, isDark]
+    [
+      appColor,
+      isDark,
+      blockModalVisible,
+      styles.confirmModalText,
+      item.user?.banned,
+      item.user?.displayName,
+      hideAllModals,
+      onToggleBlockStudent,
+    ]
   );
 
   const answeredModal = useMemo(
@@ -239,7 +260,9 @@ const ListItem: FunctionComponent<IListItem> = props => {
     <>
       <TouchableOpacity
         onLayout={e => {
-          if (position === 'absolute') setPosition('relative');
+          if (position === 'absolute') {
+            setPosition('relative');
+          }
           onLayout?.(e);
         }}
         style={[
@@ -260,8 +283,12 @@ const ListItem: FunctionComponent<IListItem> = props => {
         ]}
         onPress={() => {
           onTap?.();
-          if (admin && type === 'banned') return pickItem('blockModalVisible');
-          if (admin || own || pinned) setOptionsModalVisible(true);
+          if (admin && type === 'banned') {
+            return pickItem('blockModalVisible');
+          }
+          if (admin || own || pinned) {
+            setOptionsModalVisible(true);
+          }
         }}
       >
         <View
@@ -272,7 +299,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
             borderColor,
           }}
         >
-          <Image source={{ uri: item.user.avatarUrl }} style={{ height: 31, aspectRatio: 1 }} />
+          <Image source={{ uri: item.user?.avatarUrl }} style={{ height: 31, aspectRatio: 1 }} />
           <View
             style={{
               width: '100%',
@@ -305,7 +332,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
           )}
           <View style={styles.msgHeaderContainer}>
             <Text style={styles.displayName}>
-              {item.user.displayName}
+              {item.user?.displayName}
               {editing && <Text style={styles.editing}> Editing</Text>}
             </Text>
             <Text style={styles.timestamp}>
@@ -317,7 +344,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
             </Text>
           </View>
           {!!item.text && (
-            <Text style={[styles.msgText]} numberOfLines={hideMessage ? 1 : 0}>
+            <Text style={styles.msgText} numberOfLines={hideMessage ? 1 : 0}>
               {item.text}
             </Text>
           )}
@@ -414,7 +441,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
                           nextModal: 'removeAllModalVisible',
                         },
                         {
-                          text: item.user.banned ? 'Unblock Student' : 'Block Student',
+                          text: item.user?.banned ? 'Unblock Student' : 'Block Student',
                           nextModal: 'blockModalVisible',
                         },
                       ]
@@ -443,7 +470,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
 
 export default ListItem;
 
-const setStyles = (isDark: boolean) =>
+const setStyles: StyleProp<any> = (isDark: boolean) =>
   StyleSheet.create({
     msgHeaderContainer: {
       flexDirection: 'row',
