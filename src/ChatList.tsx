@@ -1,7 +1,8 @@
-import React, { FunctionComponent, useEffect, useRef } from 'react';
+import React, { FunctionComponent, useCallback, useRef } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  LayoutChangeEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
   StyleProp,
@@ -11,7 +12,8 @@ import {
   View,
 } from 'react-native';
 import { arrowDown, sendMsg, x } from './svgs';
-import { FormatMessageResponse } from 'stream-chat';
+import { FormatMessageResponse, StreamChat, UserResponse } from 'stream-chat';
+import ListItem from './ListItem';
 
 interface IChatList {
   appColor: string;
@@ -26,18 +28,29 @@ interface IChatList {
   showScrollToTop: boolean;
   isKeyboardVisible: boolean;
 
+  me: UserResponse;
+
   pinned: FormatMessageResponse[];
   messages: FormatMessageResponse[];
+  hidden: string[];
+  client: StreamChat;
 
+  onMessageTap: () => void;
   handleMessage: () => void;
 
   onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
   loadMore?: () => void;
   onTextBoxPress?: () => void;
 
-  renderChatItem: (info: any, pinned: boolean) => JSX.Element;
-
   comment: string;
+
+  onRemoveAllMessages: (userId: string) => void;
+  onToggleBlockStudent: (user?: UserResponse | null) => void;
+  onTogglePinMessage: (message: FormatMessageResponse) => void;
+  onToggleHidden: (id: string) => void;
+  onAnswered: (id: string) => void;
+  onToggleReact: (id: string) => void;
+  onEditMessage: (message: FormatMessageResponse) => void;
 }
 
 const ChatList: FunctionComponent<IChatList> = props => {
@@ -54,26 +67,102 @@ const ChatList: FunctionComponent<IChatList> = props => {
     showScrollToTop,
     isKeyboardVisible,
 
+    me,
+
+    onMessageTap,
     handleMessage,
 
     onScroll,
     loadMore,
     onTextBoxPress,
 
-    renderChatItem,
-
     pinned,
     messages,
+    hidden,
+    client,
 
     comment,
+
+    onRemoveAllMessages,
+    onToggleBlockStudent,
+    onTogglePinMessage,
+    onToggleHidden,
+    onAnswered,
+    onToggleReact,
+    onEditMessage,
   } = props;
 
   const styles = localStyles(isDark, appColor);
 
   const flatList = useRef<FlatList<FormatMessageResponse>>(null);
+  const fListY = useRef(0);
+
+  const onMessageLayout = useCallback(
+    ({ nativeEvent: ne }: LayoutChangeEvent, item: FormatMessageResponse) => {
+      if (item.new) {
+        delete item.new;
+        flatList.current?.scrollToOffset({
+          offset: fListY.current + ne.layout.height,
+          animated: false,
+        });
+      }
+    },
+    []
+  );
+
+  const renderChatFLItem = useCallback(
+    ({ item }: { item: FormatMessageResponse }, isPinned: boolean) => (
+      <ListItem
+        editing={editing}
+        new={!!item.new}
+        reversed={!isiOS && !pinned}
+        isDark={isDark}
+        appColor={appColor}
+        key={item.id}
+        onLayout={e => onMessageLayout(e, item)}
+        onTap={onMessageTap}
+        own={me?.displayName === item.user?.displayName}
+        admin={me?.role === 'admin'}
+        type={tabIndex ? 'question' : 'message'}
+        pinned={isPinned}
+        hidden={isPinned ? (hidden.find(id => id === item.id) ? true : false) : undefined}
+        item={item}
+        onRemoveMessage={() => client.deleteMessage(item.id || '').catch(() => {})}
+        onRemoveAllMessages={() => onRemoveAllMessages(item.user?.id || '')}
+        onToggleBlockStudent={() => onToggleBlockStudent(item.user)}
+        onTogglePinMessage={() => onTogglePinMessage(item)}
+        onToggleHidden={onToggleHidden}
+        onAnswered={() => onAnswered(item.id)}
+        onToggleReact={() => onToggleReact(item.id)}
+        onEditMessage={() => onEditMessage(item)}
+      />
+    ),
+    [
+      appColor,
+      client,
+      editing,
+      hidden,
+      isDark,
+      isiOS,
+      me?.displayName,
+      me?.role,
+      onAnswered,
+      onEditMessage,
+      onMessageLayout,
+      onMessageTap,
+      onRemoveAllMessages,
+      onToggleBlockStudent,
+      onToggleHidden,
+      onTogglePinMessage,
+      onToggleReact,
+      pinned,
+      tabIndex,
+    ]
+  );
+
   return (
     <>
-      {pinned.map(item => renderChatItem({ item }, true))}
+      {pinned.map(item => renderChatFLItem({ item }, true))}
       <View style={{ flex: 1 }}>
         <FlatList
           key={tabIndex}
@@ -87,7 +176,7 @@ const ChatList: FunctionComponent<IChatList> = props => {
           onEndReachedThreshold={0.01}
           removeClippedSubviews={true}
           keyboardShouldPersistTaps='handled'
-          renderItem={info => renderChatItem(info, false)}
+          renderItem={info => renderChatFLItem(info, false)}
           onEndReached={loadMore}
           keyExtractor={item => item.id}
           ListEmptyComponent={
