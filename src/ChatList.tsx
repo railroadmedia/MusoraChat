@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useRef } from 'react';
+import React, { FunctionComponent, useEffect, useRef } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { arrowDown } from './svgs';
+import { arrowDown, sendMsg, x } from './svgs';
 import { FormatMessageResponse } from 'stream-chat';
 
 interface IChatList {
@@ -20,11 +20,11 @@ interface IChatList {
   tabIndex: number;
   viewers: number;
   typers: string;
+  editing: boolean;
 
   loadingMore: boolean;
   showScrollToTop: boolean;
-
-  me: any;
+  isKeyboardVisible: boolean;
 
   pinned: FormatMessageResponse[];
   messages: FormatMessageResponse[];
@@ -33,9 +33,11 @@ interface IChatList {
 
   onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
   loadMore?: () => void;
+  onTextBoxPress?: () => void;
 
   renderChatItem: (info: any, pinned: boolean) => JSX.Element;
-  textBoxTouchable: JSX.Element;
+
+  comment: string;
 }
 
 const ChatList: FunctionComponent<IChatList> = props => {
@@ -46,18 +48,24 @@ const ChatList: FunctionComponent<IChatList> = props => {
     tabIndex,
     viewers,
     typers,
+    editing,
 
     loadingMore,
     showScrollToTop,
+    isKeyboardVisible,
+
+    handleMessage,
 
     onScroll,
     loadMore,
+    onTextBoxPress,
 
     renderChatItem,
-    textBoxTouchable,
 
     pinned,
     messages,
+
+    comment,
   } = props;
 
   const styles = localStyles(isDark, appColor);
@@ -108,7 +116,29 @@ const ChatList: FunctionComponent<IChatList> = props => {
           </TouchableOpacity>
         )}
       </View>
-      {textBoxTouchable}
+      <TouchableOpacity
+        onPress={onTextBoxPress}
+        style={[
+          styles.saySomethingTOpacity,
+          {
+            backgroundColor: isKeyboardVisible ? 'transparent' : isDark ? 'black' : 'white',
+          },
+        ]}
+      >
+        <Text
+          style={[styles.placeHolderText, { opacity: isKeyboardVisible ? 0 : 1 }]}
+          numberOfLines={1}
+        >
+          {comment || `${tabIndex ? 'Ask a question' : 'Say something'}...`}
+        </Text>
+        <TouchableOpacity onPress={handleMessage} style={{ padding: 15 }}>
+          {(editing ? x : sendMsg)({
+            height: 12,
+            width: 12,
+            fill: isKeyboardVisible ? 'transparent' : isDark ? '#4D5356' : '#879097',
+          })}
+        </TouchableOpacity>
+      </TouchableOpacity>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <Text style={styles.chatEventsInfo}>{viewers} Online</Text>
         <Text style={styles.chatEventsInfo}>{typers}</Text>
@@ -125,12 +155,6 @@ const localStyles: StyleProp<any> = (isDark: boolean, appColor: string) =>
       borderTopWidth: isDark ? 0 : 2,
       borderBottomWidth: isDark ? 0 : 2,
       borderColor: 'rgba(0,0,0,.1)',
-    },
-    chatEventsInfo: {
-      padding: 10,
-      paddingTop: 0,
-      color: isDark ? '#445F74' : '#879097',
-      fontFamily: 'OpenSans',
     },
     emptyListText: {
       padding: 10,
@@ -152,6 +176,25 @@ const localStyles: StyleProp<any> = (isDark: boolean, appColor: string) =>
       backgroundColor: appColor,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    saySomethingTOpacity: {
+      margin: 10,
+      borderRadius: 5,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    placeHolderText: {
+      flex: 1,
+      paddingLeft: 15,
+      color: isDark ? '#4D5356' : '#879097',
+      fontFamily: 'OpenSans',
+    },
+    chatEventsInfo: {
+      padding: 10,
+      paddingTop: 0,
+      color: isDark ? '#445F74' : '#879097',
+      fontFamily: 'OpenSans',
     },
   });
 
