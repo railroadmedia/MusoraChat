@@ -1,4 +1,4 @@
-import { Channel, StreamChat, UserResponse } from 'stream-chat';
+import { Channel, EventHandler, StreamChat, UserResponse } from 'stream-chat';
 
 const connectUser = async (
   client: StreamChat,
@@ -9,6 +9,11 @@ const connectUser = async (
     return Promise.resolve(client.user);
   }
   return (await client.connectUser({ id: id }, gsToken))?.me;
+};
+
+const disconnectUser = async (client: StreamChat, listener: EventHandler): Promise<void> => {
+  off(client, listener);
+  await client.disconnectUser();
 };
 
 const getChannels = async (
@@ -30,7 +35,38 @@ const getChannels = async (
   };
 };
 
+const on = (client: StreamChat, listener: EventHandler): void => {
+  client.on(listener);
+};
+
+const off = (client: StreamChat, listener: EventHandler): void => {
+  client.off(listener);
+};
+
+const pinMessage = (client: StreamChat, message: { id: string }): void => {
+  client.pinMessage(message).catch(() => {});
+};
+
+const unpinMessage = (client: StreamChat, message: { id: string }): void => {
+  client.unpinMessage(message).catch(() => {});
+};
+
+const deleteMessage = (client: StreamChat, message: { id: string }): void => {
+  client.deleteMessage(message.id).catch(() => {});
+};
+
+const updateMessage = (client: StreamChat, text: string, id: string): void => {
+  client.updateMessage({ text, id }).catch(() => {});
+};
+
 export default {
   connectUser,
+  disconnectUser,
   getChannels,
+  on,
+  off,
+  pinMessage,
+  unpinMessage,
+  deleteMessage,
+  updateMessage,
 };
