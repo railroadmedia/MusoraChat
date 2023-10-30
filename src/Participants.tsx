@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   LayoutChangeEvent,
+  StyleProp,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -44,25 +45,14 @@ const Participans: FunctionComponent<IParticipans> = props => {
   const flatList = useRef<FlatList>(null);
   const floatingMenu = useRef<IFloatingMenuRef>(null);
 
-  useEffect(() => {
-    channel?.on('user.watching.stop', participantsStopEventListener);
-    channel?.on('user.watching.start', participantsStartEventListener);
-    channel?.query({ watchers: { limit: 100, offset: 0 } }).then(() => setLoading(false));
-
-    return () => {
-      channel?.off(participantsStartEventListener);
-      channel?.off(participantsStopEventListener);
-    };
-  }, []);
-
   const participantsStartEventListener = useCallback(
     ({ watcher_count }: { watcher_count?: number }) => {
       setOnlineUsers(watcher_count || 0);
       if (fListY) {
-        // flatList.current?.scrollTo({
-        //   y: itemHeight.current + fListY.current,
-        //   animated: false,
-        // });
+        flatList.current?.scrollToOffset({
+          offset: itemHeight.current + fListY.current,
+          animated: false,
+        });
       }
     },
     []
@@ -81,6 +71,17 @@ const Participans: FunctionComponent<IParticipans> = props => {
     []
   );
 
+  useEffect(() => {
+    channel?.on('user.watching.stop', participantsStopEventListener);
+    channel?.on('user.watching.start', participantsStartEventListener);
+    channel?.query({ watchers: { limit: 100, offset: 0 } }).then(() => setLoading(false));
+
+    return () => {
+      channel?.off(participantsStartEventListener);
+      channel?.off(participantsStopEventListener);
+    };
+  }, [channel, participantsStartEventListener, participantsStopEventListener]);
+
   const renderFLItem = useCallback(
     ({ item }: { item: any }) => (
       <ListItem
@@ -94,11 +95,13 @@ const Participans: FunctionComponent<IParticipans> = props => {
         onTap={() => floatingMenu.current?.close?.()}
       />
     ),
-    []
+    [appColor, isDark]
   );
 
   const loadMore = useCallback(() => {
-    if (loadingMore) return;
+    if (loadingMore) {
+      return;
+    }
     setLoadingMore(true);
     channel
       ?.query({
@@ -108,7 +111,7 @@ const Participans: FunctionComponent<IParticipans> = props => {
         },
       })
       .then(() => setLoadingMore(false));
-  }, []);
+  }, [channel, loadingMore]);
 
   return (
     <>
@@ -175,7 +178,7 @@ const Participans: FunctionComponent<IParticipans> = props => {
 
 export default Participans;
 
-const setStyles = (isDark: boolean) =>
+const setStyles: StyleProp<any> = (isDark: boolean) =>
   StyleSheet.create({
     activityindicator: { flex: 1, backgroundColor: isDark ? 'black' : 'white' },
     titleText: {
