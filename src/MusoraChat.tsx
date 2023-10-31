@@ -2,37 +2,26 @@ import React, { FunctionComponent, useCallback, useEffect, useMemo, useRef, useS
 import {
   ActivityIndicator,
   FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Platform,
+  StyleProp,
   StyleSheet,
-  Text,
   TextInput,
-  TouchableOpacity,
-  View,
 } from 'react-native';
 
 import AndroidKeyboardAdjust from 'react-native-android-keyboard-adjust';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  StreamChat,
-  UserResponse,
-  Reaction,
-  MessageResponse,
-  Channel,
-  FormatMessageResponse,
-  ReactionResponse,
-  User,
-} from 'stream-chat';
-
+import { StreamChat, UserResponse, Channel, FormatMessageResponse } from 'stream-chat';
 import FloatingMenu, { IFloatingMenuRef } from './FloatingMenu';
 import Participants from './Participants';
 import BlockedUsers from './BlockedUsers';
-import ListItem from './ListItem';
-
-import { sendMsg, x, arrowDown } from './svgs';
+import { sendMsg, x } from './svgs';
 import TabMenu from './TabMenu';
 import TextBoxModal from './TextBoxModal';
 import ResourcesItem from './ResourcesItem';
 import { Resource } from 'RNDownload';
+import ChatList from './ChatList';
 
 interface IMusoraChat {
   appColor: string;
@@ -40,7 +29,7 @@ interface IMusoraChat {
   clientId: string;
   isDark: boolean;
   onRemoveAllMessages: (userId: string) => void;
-  onToggleBlockStudent: (blockedUser: { banned?: boolean; id: string }) => void;
+  onToggleBlockStudent: (blockedUser?: UserResponse | null) => void;
   questionsId: string;
   user: {
     id: string;
@@ -50,6 +39,8 @@ interface IMusoraChat {
   onResourcesPress: (resource: Resource) => void;
   isLandscape: boolean;
 }
+
+const isiOS = Platform.OS === 'ios';
 
 const MusoraChat: FunctionComponent<IMusoraChat> = props => {
   const {
@@ -66,8 +57,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     isLandscape,
   } = props;
 
-  const styles = setStyles(isDark, appColor);
-  const isiOS = Platform.OS === 'ios';
+  const styles = setStyles(isDark);
 
   const [comment, setComment] = useState('');
   const [chatTypers, setChatTypers] = useState<string[]>([]);
@@ -94,289 +84,62 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
   const [chatPending, setChatPendingMsg] = useState<any>();
   const [editMessage, setEditMessage] = useState<any>();
 
-  const flatList = useRef<FlatList>(null);
   const commentTextInput = useRef<TextInput>(null);
   const floatingMenu = useRef<IFloatingMenuRef>(null);
-  const fListY = useRef(0);
-
-  const getChannels = useCallback(async (): Promise<void> => {
-    const channels = await client?.queryChannels(
-      {
-        id: { $in: [chatId, questionsId] },
-      },
-      [{}],
-      { message_limit: 200 }
-    );
-    setChatChannel(channels?.find(ch => ch.id === chatId));
-    setQuestionsChannel(channels?.find(ch => ch.id === questionsId));
-  }, [chatId, client, questionsId]);
-
-  const connectUser = useCallback(async (): Promise<void> => {
-    const { id, gsToken } = user;
-    try {
-      const tempMe = client?.user?.displayName
-        ? client.user
-        : (await client?.connectUser({ id: `${id}` }, gsToken))?.me;
-      setMe(tempMe);
-    } catch (e) {}
-  }, [client, user]);
-
-  const clientEventListener: ({
-    type,
-    user,
-    watcher_count,
-    channel_id,
-    reaction,
-    message,
-  }: {
-    type?: string;
-    user?: any;
-    watcher_count?: number;
-    channel_id?: string;
-    reaction?: any;
-    message?: any;
-  }) => void = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-shadow
-    async ({ type, user, watcher_count, channel_id, reaction, message }) => {
-      if (type === 'health.check') {
-        return;
-      }
-      if (type?.includes('reaction') && reaction.type !== 'upvote') {
-        return;
-      }
-
-      const ct = new Set(chatTypers);
-      const qt = new Set(questionsTypers);
-      if (tabIndex && channel_id === questionsId) {
-        if (type === 'typing.start') {
-          qt.add(user.displayName);
-        }
-        if (type === 'typing.stop') {
-          qt.delete(user.displayName);
-        }
-      } else if (!tabIndex && channel_id === chatId) {
-        if (type === 'typing.start') {
-          ct.add(user.displayName);
-        }
-        if (type === 'typing.stop') {
-          ct.delete(user.displayName);
-        }
-      }
-      if (type?.match(/^(user.banned|user.unbanned|delete_user_messages)$/)) {
-        await getChannels();
-        if (client !== undefined && client?.user !== undefined) {
-          client.user.banned = user.banned;
-        }
-      }
-      if (type === 'message.new') {
-        if (user.id !== user.id) {
-          if (fListY && chatChannel) {
-            const { messages } = chatChannel?.state;
-            messages[messages.length - 1].new = true;
-          }
-          if (tabIndex) {
-            const msg = questionsChannel?.state.messages.find(
-              (m: FormatMessageResponse) => m.id === message.id
-            );
-            if (msg) {
-              msg.reaction_counts = {
-                upvote: 1,
-              };
-            }
-          }
-        } else {
-          if (tabIndex) {
-            const msgToAddReact = questionsChannel?.state.messages.find(
-              (m: FormatMessageResponse) => m.id === message.id
-            );
-            if (msgToAddReact) {
-              const now = new Date().toDateString();
-              msgToAddReact.own_reactions = [
-                { type: 'upvote', tbRemoved: true, created_at: now, updated_at: now },
-              ];
-              msgToAddReact.reaction_counts = { upvote: 1 };
-            }
-          }
-          tabIndex ? setQuestionPendingMsg(undefined) : setChatPendingMsg(undefined);
-        }
-      }
-      if (tabIndex && type === 'reaction.new' && reaction.user_id === user.id) {
-        const msg: FormatMessageResponse | undefined = questionsChannel?.state.messages.find(
-          (m: FormatMessageResponse) => m.id === reaction.message_id
-        );
-        if (msg) {
-          msg.own_reactions = msg?.own_reactions?.filter(
-            (or: ReactionResponse<Reaction, User>) => !or.tbRemoved
-          );
-        }
-      }
-
-      if (type?.includes('watching') && watcher_count) {
-        if (channel_id === questionsId) {
-          setQuestionsViewers(watcher_count);
-        } else {
-          setChatViewers(watcher_count);
-        }
-      }
-      if (type?.includes('typing')) {
-        if (tabIndex) {
-          setQuestionsTypers(Array.from(qt));
-        } else {
-          setChatTypers(Array.from(ct));
-        }
-      }
-      // This triggers re-rendering when receiving a message.
-      // Because it was not seeing the inner state of the channels.
-      // setState({});
-    },
-    [
-      chatChannel,
-      chatId,
-      chatTypers,
-      client,
-      getChannels,
-      questionsChannel?.state.messages,
-      questionsId,
-      questionsTypers,
-      tabIndex,
-    ]
-  );
-
-  const disconnectUser = useCallback(async () => {
-    client?.off(clientEventListener);
-    await client?.disconnectUser?.();
-  }, [client, clientEventListener]);
-
-  useEffect(() => {
-    // console.log('length', chatChannel?.state.messages.length);
-  }, [chatChannel]);
-
-  useEffect(() => {
-    const tempClient = StreamChat.getInstance(clientId, {
-      timeout: 10000,
-    });
-    setClient(tempClient);
-    return () => {
-      client?.off(clientEventListener);
-      client?.disconnectUser();
-    };
-  }, [client, clientEventListener, clientId]);
+  const fListY = useRef<number>(0);
 
   useEffect(() => {
     if (!isiOS) {
       AndroidKeyboardAdjust?.setAdjustPan();
     }
-    connectUser()
-      .then(getChannels)
-      .then(() => {
-        client?.on(clientEventListener);
-        setLoading(false);
-        // setChatViewers(chatChannel?.state.watcher_count);
-        // setQuestionsViewers(questionsChannel?.state.watcher_count);
-      });
-    return () => {
-      if (!isiOS) {
-        AndroidKeyboardAdjust?.setAdjustResize();
-      }
-      disconnectUser();
-    };
-  }, [client, clientEventListener, connectUser, disconnectUser, getChannels, isiOS]);
+  }, []);
 
-  const renderChatFLItem = useCallback(
-    ({ item }: { item: FormatMessageResponse }, pinned: boolean) => (
-      <ListItem
-        editing={editMessage?.id === item.id}
-        new={!!item.new}
-        reversed={!isiOS && !pinned}
-        isDark={isDark}
-        appColor={appColor}
-        key={item.id}
-        onLayout={({ nativeEvent: ne }) => {
-          if (item.new) {
-            delete item.new;
-            flatList.current?.scrollToOffset({
-              offset: fListY.current + ne.layout.height,
-              animated: false,
-            });
-          }
-        }}
-        onTap={() => floatingMenu.current?.close?.()}
-        own={me?.displayName === item.user?.displayName}
-        admin={me?.role === 'admin'}
-        type={tabIndex ? 'question' : 'message'}
-        pinned={pinned}
-        hidden={pinned ? (hidden.find(id => id === item.id) ? true : false) : undefined}
-        item={item}
-        onRemoveMessage={() => client?.deleteMessage(item.id || '').catch(() => {})}
-        onRemoveAllMessages={() => onRemoveAllMessages(item.user?.id || '')}
-        onToggleBlockStudent={() =>
-          item.user && item.user.banned !== undefined ? onToggleBlockStudent(item.user) : undefined
-        }
-        onTogglePinMessage={() => {
-          if (item.pinned) {
-            return client?.unpinMessage(item.id || '').catch(() => {});
-          }
-          chatChannel?.state.messages
-            ?.filter((m: FormatMessageResponse) => m.pinned)
-            .sort((i: FormatMessageResponse, j: FormatMessageResponse) =>
-              (i.pinned_at || 0) < (j.pinned_at || 0) ? 1 : -1
-            )
-            .slice(1)
-            .map((m: FormatMessageResponse) => client?.unpinMessage(m).catch(() => {}));
-          client?.pinMessage(item).catch(() => {});
-        }}
-        onToggleHidden={id => {
-          if (hidden.find(hiddenId => item.id === hiddenId)) {
-            setHidden(hidden.filter(hiddenId => hiddenId !== item.id));
-          } else {
-            setHidden([...hidden, id]);
-          }
-        }}
-        onAnswered={() => client?.deleteMessage(item.id).catch(() => {})}
-        onToggleReact={() => {
-          if (item.own_reactions?.some((r: Reaction) => r.type === 'upvote')) {
-            questionsChannel?.deleteReaction(item.id, 'upvote').catch(() => {});
-          } else {
-            questionsChannel?.sendReaction(item.id, { type: 'upvote' }).catch(() => {});
-          }
-        }}
-        onEditMessage={() => {
-          setEditMessage(item);
-          setKeyboardVisible(true);
-          setComment(item.text || '');
-        }}
-      />
-    ),
-    [
-      appColor,
-      chatChannel?.state.messages,
-      client,
-      editMessage?.id,
-      hidden,
-      isDark,
-      isiOS,
-      me,
-      onRemoveAllMessages,
-      onToggleBlockStudent,
-      questionsChannel,
-      tabIndex,
-    ]
-  );
+  const clientEventListener = useCallback(() => {}, []);
 
-  const formatTypers = useMemo(() => {
-    const typers = tabIndex ? questionsTypers : chatTypers;
-    if (!typers.length) {
-      return '';
+  useEffect(() => {
+    // SETUP
+    if (client) {
+      return;
     }
-    // let firstTwo = typers.slice(0, 2).concat(typers.length < 3 ? ' And ' : ', ');
-    // let remaining = typers.slice(2, typers.length);
-    // remaining = remaining.length
-    //   ? ` And ${remaining.length} Other${remaining.length === 1 ? '' : 's'}`
-    //   : '';
-    // let endString = ` ${typers.length < 2 ? 'Is' : 'Are'} Typing`;
-    // return firstTwo + remaining + endString;
-    return 'TYPERS NOT IMPLEMENTED';
-  }, [chatTypers, questionsTypers, tabIndex]);
+
+    const tempClient = StreamChat.getInstance(clientId, {
+      timeout: 10000,
+    });
+
+    setClient(tempClient);
+
+    // Connect user
+    tempClient
+      .connectUser(user, user.gsToken)
+      .then(connection => {
+        setMe(connection?.me);
+        // Cet channels
+        tempClient
+          .queryChannels(
+            {
+              id: { $in: [chatId, questionsId] },
+            },
+            [{}],
+            { message_limit: 200 }
+          )
+          .then(channels => {
+            setChatChannel(channels.find(c => c.id === chatId));
+            setQuestionsChannel(channels.find(c => c.id === questionsId));
+            tempClient.on(clientEventListener);
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      })
+      .catch(() => {});
+
+    return () => {
+      // Disconnect User
+      tempClient.disconnectUser();
+      tempClient.off(clientEventListener);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId]);
 
   const currentChannel = useMemo(
     () => (channel === 'questionsChannel' ? questionsChannel : chatChannel),
@@ -388,228 +151,157 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     [editMessage, comment]
   );
 
-  const handleMessage = useCallback(() => {
-    if (!client) {
+  const handleMessage = useCallback(() => {}, []);
+
+  const onChatScroll = useCallback(
+    ({
+      nativeEvent: {
+        contentOffset: { y },
+      },
+    }: NativeSyntheticEvent<NativeScrollEvent>) => {
+      fListY.current = y >= 0 ? y : 0;
+      if (y > 0 && !showScrollToTop) {
+        setShowScrollToTop(true);
+      }
+      if (y === 0 && showScrollToTop) {
+        setShowScrollToTop(false);
+      }
+    },
+    [showScrollToTop]
+  );
+
+  const loadMore = useCallback(() => {
+    if (!currentChannel) {
       return;
     }
-    if (editToBeCancelled) {
-      setKeyboardVisible(false);
-      setComment('');
-      setEditMessage(undefined);
-    }
-    const { user } = client;
-    commentTextInput.current?.clear();
-    currentChannel?.stopTyping();
-    if (comment && !user?.banned) {
-      if (editMessage) {
-        editMessage.text = comment;
-        client
-          ?.updateMessage({
-            text: comment,
-            id: editMessage.id,
-          })
-          .catch(() => {});
-      } else {
-        const tempPending: any = {
-          user,
-          text: comment,
-          id: 1,
-          created_at: new Date(),
-        };
-        if (channel === 'questionsChannel') {
-          tempPending.own_reactions = [{ type: 'upvote', tbRemoved: true }];
-          tempPending.reaction_counts = { upvote: 1 };
-        }
-        channel === 'questionsChannel'
-          ? setQuestionPendingMsg(tempPending)
-          : setChatPendingMsg(tempPending);
-        flatList.current?.scrollToOffset({ offset: 0, animated: true });
-        currentChannel
-          ?.sendMessage({ text: comment })
-          .then(({ message: { id } }: { message: MessageResponse }) => {
-            if (channel === 'questionsChannel') {
-              questionsChannel?.sendReaction(id, { type: 'upvote' }).catch(() => {});
-            }
-          })
-          .catch(() => {});
-      }
-    }
-    setEditMessage(undefined);
-    setKeyboardVisible(false);
-    setComment('');
-  }, [channel, client, comment, currentChannel, editMessage, editToBeCancelled, questionsChannel]);
-
-  const loadMore = useCallback(async () => {
     setLoadingMore(true);
-    await currentChannel?.query({
-      messages: { limit: 50, id_lt: currentChannel.state.messages[0].id },
+    currentChannel?.query({ messages: { limit: 50 } }).finally(() => {
+      setLoadingMore(false);
     });
-    setLoadingMore(false);
   }, [currentChannel]);
 
-  const renderChat = useMemo(() => {
-    let pinned: FormatMessageResponse[] = [];
-    let messages: FormatMessageResponse[] = [];
-    if (!loading && !showParticipants && !showBlocked && currentChannel !== undefined) {
-      messages = (currentChannel.state?.messages || [])
-        .slice()
-        .reverse()
-        .filter((m: FormatMessageResponse) => m.type !== 'deleted' && !m.user?.banned);
-      // console.log('render chat', currentChannel.state?.messages);
-      const pendingMsg = channel === 'questionsChannel' ? questionPending : chatPending;
-      if (pendingMsg) {
-        messages?.unshift(pendingMsg);
+  const onTogglePinMessage = useCallback(
+    (item: FormatMessageResponse) => {
+      if (!client) {
+        return;
       }
-      // if (messages !== undefined && (tabIndex === 0 || tabIndex === 1)) {
-      //   messages = Object.values(
-      //     messages
-      //       .sort((i: FormatMessageResponse, j: FormatMessageResponse) =>
-      //         (i.reaction_counts?.upvote || 0) < (j?.reaction_counts?.upvote || 0) ||
-      //         i.reaction_counts?.upvote === undefined
-      //           ? -1
-      //           : 1
-      //       )
-      //       .reduce((r, a) => {
-      //         r[a.reaction_counts?.upvote] = r[a.reaction_counts?.upvote] || [];
-      //         r[a.reaction_counts?.upvote].push(a);
-      //         return r;
-      //       }, Object.create(null))
-      //     // ).sort((i, j) =>
-      //     //   i[0].reaction_counts?.upvote < j[0]?.reaction_counts?.upvote ||
-      //     //   i[0].reaction_counts?.upvote === undefined
-      //     //     ? -1
-      //     //     : 1
-      //   );
-      //   // .map((m: FormatMessageResponse) => m.sort((i, j) => (i.created_at > j?.created_at ? -1 : 1)))
-      //   // .flat();
-      // }
-      pinned = messages
-        .filter((m: FormatMessageResponse) => m.pinned)
-        .slice(-2)
-        .sort((i, j) => ((i.pinned_at || 0) < (j.pinned_at || 0) ? -1 : 1));
-    }
-    return (
-      <>
-        {pinned.map(item => renderChatFLItem({ item }, true))}
-        <View style={{ flex: 1 }}>
-          <FlatList
-            key={tabIndex}
-            inverted={isiOS}
-            onScroll={({
-              nativeEvent: {
-                contentOffset: { y },
-              },
-            }) => {
-              fListY.current = y >= 0 ? y : 0;
+      if (item.pinned) {
+        client.unpinMessage(item);
+      }
+      chatChannel?.state.messages
+        ?.filter(m => m.pinned)
+        .sort((i, j) => ((i.pinned_at || 0) < (j.pinned_at || 0) ? 1 : -1))
+        .slice(1)
+        .map(m => client.unpinMessage(m));
+      client.pinMessage(item);
+    },
+    [chatChannel?.state.messages, client]
+  );
+  const onToggleHidden = useCallback(
+    (id: string) => {
+      if (!client) {
+        return;
+      }
+      if (hidden.includes(id)) {
+        setHidden(hidden.filter(i => i !== id));
+      } else {
+        setHidden([...hidden, id]);
+      }
+    },
+    [client, hidden]
+  );
+  const onAnswered = useCallback(
+    (id: string) => {
+      if (!client) {
+        return;
+      }
+      client.deleteMessage(id);
+    },
+    [client]
+  );
+  const onToggleReact = useCallback(() => {}, []);
+  const onEditMessage = useCallback(() => {}, []);
 
-              if (y > 0 && !showScrollToTop) {
-                setShowScrollToTop(true);
-              } else {
-                setShowScrollToTop(false);
-              }
-            }}
-            windowSize={10}
-            data={messages}
-            style={[styles.flatList, isiOS ? {} : { transform: [{ rotate: '180deg' }] }]}
-            initialNumToRender={1}
-            maxToRenderPerBatch={10}
-            onEndReachedThreshold={0.01}
-            removeClippedSubviews={true}
-            keyboardShouldPersistTaps='handled'
-            renderItem={info => renderChatFLItem(info, false)}
-            onEndReached={loadMore}
-            keyExtractor={item => item.id}
-            ListEmptyComponent={
-              <Text
-                style={[styles.emptyListText, isiOS ? {} : { transform: [{ rotate: '180deg' }] }]}
-              >
-                {tabIndex ? 'No questions' : 'Say Hi!'}
-              </Text>
-            }
-            ListFooterComponent={
-              <ActivityIndicator
-                size='small'
-                color={isDark ? 'white' : 'black'}
-                animating={loadingMore}
-                style={styles.activityIndicator}
-              />
-            }
-            ref={flatList}
-          />
-          {showScrollToTop && (
-            <TouchableOpacity
-              onPress={() => flatList.current?.scrollToOffset({ offset: 0 })}
-              style={styles.scrollToTop}
-            >
-              {arrowDown({ width: '70%', fill: 'white' })}
-            </TouchableOpacity>
-          )}
-        </View>
-        <TouchableOpacity
-          onPress={() => {
+  const formatTypers = useMemo(() => 'format typers', []);
+  const messages: FormatMessageResponse[] = useMemo(() => {
+    const tempMessages = currentChannel?.state.messages || [];
+    // tempMessages
+    //   .slice()
+    //   .reverse()
+    //   ?.filter(m => m?.type !== 'deleted' && !m?.user?.banned);
+    return tempMessages;
+  }, [currentChannel?.state.messages]);
+
+  const pinned: FormatMessageResponse[] = useMemo(() => [], []);
+
+  const renderChat = useCallback(
+    () =>
+      me === undefined || client === undefined ? (
+        <></>
+      ) : (
+        <ChatList
+          appColor={appColor}
+          isDark={isDark}
+          isiOS={isiOS}
+          tabIndex={tabIndex}
+          viewers={tabIndex ? questionsViewers : chatViewers}
+          typers={formatTypers}
+          editing={editToBeCancelled}
+          loadingMore={loadingMore}
+          showScrollToTop={showScrollToTop}
+          isKeyboardVisible={keyboardVisible}
+          me={me}
+          pinned={pinned}
+          messages={messages}
+          hidden={hidden}
+          client={client}
+          onMessageTap={() => floatingMenu.current?.close?.()}
+          handleMessage={handleMessage}
+          onScroll={onChatScroll}
+          loadMore={loadMore}
+          onTextBoxPress={() => {
             setKeyboardVisible(true);
-            floatingMenu?.current?.close();
+            floatingMenu.current?.close?.();
           }}
-          style={[
-            styles.saySomethingTOpacity,
-            {
-              backgroundColor: keyboardVisible ? 'transparent' : isDark ? 'black' : 'white',
-            },
-          ]}
-        >
-          <Text
-            style={[styles.placeHolderText, { opacity: keyboardVisible ? 0 : 1 }]}
-            numberOfLines={1}
-          >
-            {editMessage
-              ? comment
-              : comment || `${tabIndex ? 'Ask a question' : 'Say something'}...`}
-          </Text>
-          <TouchableOpacity onPress={handleMessage} style={{ padding: 15 }}>
-            {(editToBeCancelled ? x : sendMsg)({
-              height: 12,
-              width: 12,
-              fill: keyboardVisible ? 'transparent' : isDark ? '#4D5356' : '#879097',
-            })}
-          </TouchableOpacity>
-        </TouchableOpacity>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Text style={styles.chatEventsInfo}>
-            {tabIndex ? questionsViewers : chatViewers} Online
-          </Text>
-          <Text style={styles.chatEventsInfo}>{formatTypers}</Text>
-        </View>
-      </>
-    );
-  }, [
-    loading,
-    showParticipants,
-    showBlocked,
-    currentChannel,
-    tabIndex,
-    isiOS,
-    styles,
-    loadMore,
-    isDark,
-    loadingMore,
-    showScrollToTop,
-    keyboardVisible,
-    editMessage,
-    comment,
-    handleMessage,
-    editToBeCancelled,
-    questionsViewers,
-    chatViewers,
-    formatTypers,
-    channel,
-    questionPending,
-    chatPending,
-    renderChatFLItem,
-  ]);
-
-  // useEffect(() => {
-  //   console.log(comment);
-  // }, [comment]);
+          comment={comment}
+          onRemoveAllMessages={onRemoveAllMessages}
+          onToggleBlockStudent={onToggleBlockStudent}
+          onTogglePinMessage={onTogglePinMessage}
+          onToggleHidden={onToggleHidden}
+          onAnswered={onAnswered}
+          onToggleReact={onToggleReact}
+          onEditMessage={onEditMessage}
+        />
+      ),
+    [
+      appColor,
+      chatViewers,
+      client,
+      comment,
+      editToBeCancelled,
+      formatTypers,
+      handleMessage,
+      hidden,
+      isDark,
+      keyboardVisible,
+      loadMore,
+      loadingMore,
+      me,
+      messages,
+      onAnswered,
+      onChatScroll,
+      onEditMessage,
+      onRemoveAllMessages,
+      onToggleBlockStudent,
+      onToggleHidden,
+      onTogglePinMessage,
+      onToggleReact,
+      pinned,
+      questionsViewers,
+      showScrollToTop,
+      tabIndex,
+    ]
+  );
 
   return (
     <SafeAreaView edges={['bottom']} style={styles.chatContainer}>
@@ -643,7 +335,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             setShowParticipants(true);
             setShowBlocked(false);
           }}
-          onUnblockStudent={user => onToggleBlockStudent(user)}
+          onUnblockStudent={unblockedUser => onToggleBlockStudent(unblockedUser)}
         />
       ) : (
         <>
@@ -667,7 +359,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
               data={resources}
             />
           ) : (
-            renderChat
+            renderChat()
           )}
           <FloatingMenu
             isDark={isDark}
@@ -694,7 +386,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             isDark={isDark}
             ref={commentTextInput}
             onSubmitEditing={handleMessage}
-            onChangeText={comment => setComment(comment)}
+            onChangeText={changedComment => setComment(changedComment)}
             comment={comment}
             icon={
               <>
@@ -714,7 +406,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
 
 export default MusoraChat;
 
-const setStyles = (isDark: boolean, appColor: string) =>
+const setStyles: StyleProp<any> = (isDark: boolean) =>
   StyleSheet.create({
     activityIndicator: {
       flex: 1,
@@ -723,48 +415,5 @@ const setStyles = (isDark: boolean, appColor: string) =>
     chatContainer: {
       flex: 1,
       backgroundColor: isDark ? '#00101D' : '#F2F3F5',
-    },
-    flatList: {
-      flex: 1,
-      backgroundColor: isDark ? 'black' : 'white',
-      borderTopWidth: isDark ? 0 : 2,
-      borderBottomWidth: isDark ? 0 : 2,
-      borderColor: 'rgba(0,0,0,.1)',
-    },
-    emptyListText: {
-      padding: 10,
-      textAlign: 'center',
-      color: isDark ? 'white' : 'black',
-    },
-    saySomethingTOpacity: {
-      margin: 10,
-      borderRadius: 5,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    chatEventsInfo: {
-      padding: 10,
-      paddingTop: 0,
-      color: isDark ? '#445F74' : '#879097',
-      fontFamily: 'OpenSans',
-    },
-    placeHolderText: {
-      flex: 1,
-      paddingLeft: 15,
-      color: isDark ? '#4D5356' : '#879097',
-      fontFamily: 'OpenSans',
-    },
-    scrollToTop: {
-      width: 30,
-      aspectRatio: 1,
-      position: 'absolute',
-      alignSelf: 'center',
-      bottom: 10,
-      padding: 5,
-      borderRadius: 15,
-      backgroundColor: appColor,
-      justifyContent: 'center',
-      alignItems: 'center',
     },
   });
