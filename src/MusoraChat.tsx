@@ -197,6 +197,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     },
     [chatChannel?.state.messages, client]
   );
+
   const onToggleHidden = useCallback(
     (id: string) => {
       if (!client) {
@@ -210,6 +211,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     },
     [client, hidden]
   );
+
   const onAnswered = useCallback(
     (id: string) => {
       if (!client) {
@@ -224,15 +226,50 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
 
   const formatTypers = useMemo(() => 'format typers', []);
   const messages: FormatMessageResponse[] = useMemo(() => {
-    const tempMessages = currentChannel?.state.messages || [];
-    // tempMessages
-    //   .slice()
-    //   .reverse()
-    //   ?.filter(m => m?.type !== 'deleted' && !m?.user?.banned);
+    let tempMessages = currentChannel?.state.messages || [];
+    tempMessages = tempMessages
+      .slice()
+      .reverse()
+      .filter(m => m?.type !== 'deleted' && !m?.user?.banned);
+    if (tabIndex === 0 || tabIndex === 1) {
+      tempMessages = Object.values(
+        tempMessages
+          .sort((i, j) =>
+            (i.reaction_counts?.upvote || 0) < (j?.reaction_counts?.upvote || 0) ||
+            i.reaction_counts?.upvote === undefined
+              ? -1
+              : 1
+          )
+          .reduce(
+            function (r, a) {
+              const upvote = a.reaction_counts?.upvote || 0;
+              r[upvote] = r[upvote] || [];
+              r[upvote].push(a);
+              return r;
+            },
+            Object.create(null) as FormatMessageResponse[][]
+          )
+      )
+        .sort((i, j) =>
+          (i[0].reaction_counts?.upvote || 0) < (j[0]?.reaction_counts?.upvote || 0) ||
+          i[0].reaction_counts?.upvote === undefined
+            ? -1
+            : 1
+        )
+        .map(m => m.sort((i, j) => (i.created_at > j?.created_at ? -1 : 1)))
+        .flat();
+    }
     return tempMessages;
-  }, [currentChannel?.state.messages]);
+  }, [currentChannel?.state.messages, tabIndex]);
 
-  const pinned: FormatMessageResponse[] = useMemo(() => [], []);
+  const pinned: FormatMessageResponse[] = useMemo(() => {
+    const p = messages
+      ?.filter(m => m.pinned)
+      .slice(-2)
+      .sort((i, j) => ((i.pinned_at || 0) < (j.pinned_at || 0) ? -1 : 1));
+
+    return p;
+  }, [messages]);
 
   const renderChat = useCallback(
     () =>
