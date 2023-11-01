@@ -12,7 +12,14 @@ import {
 
 import AndroidKeyboardAdjust from 'react-native-android-keyboard-adjust';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StreamChat, UserResponse, Channel, FormatMessageResponse } from 'stream-chat';
+import {
+  StreamChat,
+  UserResponse,
+  Channel,
+  FormatMessageResponse,
+  Event,
+  Message,
+} from 'stream-chat';
 import FloatingMenu, { IFloatingMenuRef } from './FloatingMenu';
 import Participants from './Participants';
 import BlockedUsers from './BlockedUsers';
@@ -82,7 +89,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
 
   const [questionPending, setQuestionPendingMsg] = useState<any>();
   const [chatPending, setChatPendingMsg] = useState<any>();
-  const [editMessage, setEditMessage] = useState<any>();
+  const [editMessage, setEditMessage] = useState<Message | undefined>();
 
   const commentTextInput = useRef<TextInput>(null);
   const floatingMenu = useRef<IFloatingMenuRef>(null);
@@ -94,7 +101,168 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     }
   }, []);
 
-  const clientEventListener = useCallback(() => {}, []);
+  const currentChannel = useMemo(
+    () => (channel === 'questionsChannel' ? questionsChannel : chatChannel),
+    [channel, chatChannel, questionsChannel]
+  );
+
+  const editToBeCancelled = useMemo(
+    () => editMessage?.text === comment || (editMessage && !comment) || false,
+    [editMessage, comment]
+  );
+
+  const messages: FormatMessageResponse[] = useMemo(() => {
+    let tempMessages = currentChannel?.state.messages || [];
+    tempMessages = tempMessages
+      .slice()
+      .reverse()
+      .filter(m => m?.type !== 'deleted' && !m?.user?.banned);
+    if (tabIndex === 1) {
+      tempMessages.unshift(questionPending);
+    }
+    if (tabIndex === 0) {
+      tempMessages.unshift(chatPending);
+    }
+    if (tabIndex === 0 || tabIndex === 1) {
+      tempMessages = Object.values(
+        tempMessages
+          .sort((i, j) =>
+            (i.reaction_counts?.upvote || 0) < (j?.reaction_counts?.upvote || 0) ||
+            i.reaction_counts?.upvote === undefined
+              ? -1
+              : 1
+          )
+          .reduce(
+            function (r, a) {
+              const upvote = a?.reaction_counts?.upvote || 0;
+              r[upvote] = r[upvote] || [];
+              r[upvote].push(a);
+              return r;
+            },
+            Object.create(null) as FormatMessageResponse[][]
+          )
+      )
+        .sort((i, j) =>
+          (i[0].reaction_counts?.upvote || 0) < (j[0]?.reaction_counts?.upvote || 0) ||
+          i[0].reaction_counts?.upvote === undefined
+            ? -1
+            : 1
+        )
+        .map(m => m.sort((i, j) => (i.created_at > j?.created_at ? -1 : 1)))
+        .flat();
+    }
+    return tempMessages;
+  }, [chatPending, currentChannel?.state.messages, questionPending, tabIndex]);
+
+  const pinned: FormatMessageResponse[] = useMemo(
+    () =>
+      messages
+        ?.filter(m => m?.pinned)
+        .slice(-2)
+        .sort((i, j) => ((i.pinned_at || 0) < (j.pinned_at || 0) ? -1 : 1)),
+
+    [messages]
+  );
+
+  const clientEventListener = useCallback(
+    ({ type, user: eventUser, watcher_count, channel_id, reaction, message }: Event) => {
+      if (type === 'health.check') {
+        return;
+      }
+      if (type.includes('reaction') && reaction?.type !== 'upvote') {
+        return;
+      }
+
+      const ct = new Set(chatTypers);
+      const qt = new Set(questionsTypers);
+      if (tabIndex && channel_id === questionsId) {
+        if (type === 'typing.start' && eventUser?.username) {
+          qt.add(eventUser.username);
+        }
+        if (type === 'typing.stop' && eventUser?.username) {
+          qt.delete(eventUser.username);
+        }
+      } else if (!tabIndex && channel_id === chatId) {
+        if (type === 'typing.start' && eventUser?.username) {
+          ct.add(eventUser.username);
+        }
+        if (type === 'typing.stop' && eventUser?.username) {
+          ct.delete(eventUser.username);
+        }
+      }
+      if (
+        type.match(/^(user.banned|user.unbanned|delete_user_messages)$/) &&
+        eventUser &&
+        client?.user
+      ) {
+        client.user.banned = eventUser.banned;
+      }
+      if (type === 'message.new') {
+        if (eventUser?.id !== user.id) {
+          if (fListY.current) {
+            messages[messages.length - 1].new = true;
+          }
+          if (tabIndex) {
+            const msg = questionsChannel?.state.messages.find(m => m.id === message?.id);
+            if (msg) {
+              msg.reaction_counts = {
+                upvote: 1,
+              };
+            }
+          }
+        } else {
+          if (tabIndex) {
+            const msgToAddReact = questionsChannel?.state.messages.find(m => m.id === message?.id);
+            if (msgToAddReact) {
+              msgToAddReact.own_reactions = [
+                { type: 'upvote', tbRemoved: true, created_at: '', updated_at: '' },
+              ];
+              msgToAddReact.reaction_counts = { upvote: 1 };
+            }
+            setQuestionPendingMsg(undefined);
+          } else {
+            setChatPendingMsg(undefined);
+          }
+        }
+      }
+      if (tabIndex && type === 'reaction.new' && reaction?.user_id === eventUser?.id) {
+        const upvotingMessage = questionsChannel?.state.messages.find(
+          m => m.id === reaction?.message_id
+        );
+        if (upvotingMessage) {
+          upvotingMessage.own_reactions = upvotingMessage?.own_reactions?.filter(
+            or => !or.tbRemoved
+          );
+        }
+      }
+
+      if (type?.includes('watching') && watcher_count) {
+        if (channel_id === questionsId) {
+          setQuestionsViewers(watcher_count);
+        } else {
+          setChatViewers(watcher_count);
+        }
+      }
+      if (type?.includes('typing')) {
+        if (channel_id === questionsId) {
+          setQuestionsTypers(Array.from(qt));
+        } else {
+          setChatTypers(Array.from(ct));
+        }
+      }
+    },
+    [
+      chatId,
+      chatTypers,
+      client?.user,
+      messages,
+      questionsChannel?.state.messages,
+      questionsId,
+      questionsTypers,
+      tabIndex,
+      user.id,
+    ]
+  );
 
   useEffect(() => {
     // SETUP
@@ -135,23 +303,72 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
 
     return () => {
       // Disconnect User
-      tempClient.disconnectUser();
+      tempClient.disconnectUser().catch(() => {});
       tempClient.off(clientEventListener);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId]);
 
-  const currentChannel = useMemo(
-    () => (channel === 'questionsChannel' ? questionsChannel : chatChannel),
-    [channel, chatChannel, questionsChannel]
-  );
-
-  const editToBeCancelled = useMemo(
-    () => editMessage?.text === comment || (editMessage && !comment),
-    [editMessage, comment]
-  );
-
-  const handleMessage = useCallback(() => {}, []);
+  const handleMessage = useCallback(() => {
+    if (editToBeCancelled) {
+      setKeyboardVisible(false);
+      setComment('');
+      setEditMessage(undefined);
+      return;
+    }
+    if (!client || !client.user) {
+      return;
+    }
+    const clientUser = client.user;
+    commentTextInput.current?.clear();
+    currentChannel?.stopTyping();
+    if (comment && !clientUser.banned) {
+      if (editMessage) {
+        editMessage.text = comment;
+        client
+          .updateMessage({
+            text: comment,
+            id: editMessage.id,
+          })
+          .catch(() => {});
+      } else {
+        const pendingMessage: any = {
+          user: clientUser,
+          text: comment,
+          id: 1,
+          created_at: '',
+        };
+        if (tabIndex === 1) {
+          pendingMessage.own_reactions = [{ type: 'upvote', tbRemoved: true }];
+          pendingMessage.reaction_counts = { upvote: 1 };
+          setQuestionPendingMsg(pendingMessage);
+        }
+        if (tabIndex === 0) {
+          setChatPendingMsg(pendingMessage);
+        }
+        currentChannel
+          ?.sendMessage({ text: comment })
+          .then(({ message: { id } }) => {
+            if (channel === 'questionsChannel') {
+              questionsChannel?.sendReaction(id, { type: 'upvote' }).catch(() => {});
+            }
+          })
+          .catch(() => {});
+      }
+    }
+    setEditMessage(undefined);
+    setKeyboardVisible(false);
+    setComment('');
+  }, [
+    channel,
+    client,
+    comment,
+    currentChannel,
+    editMessage,
+    editToBeCancelled,
+    questionsChannel,
+    tabIndex,
+  ]);
 
   const onChatScroll = useCallback(
     ({
@@ -186,14 +403,14 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
         return;
       }
       if (item.pinned) {
-        client.unpinMessage(item);
+        client.unpinMessage(item).catch(() => {});
       }
       chatChannel?.state.messages
         ?.filter(m => m.pinned)
         .sort((i, j) => ((i.pinned_at || 0) < (j.pinned_at || 0) ? 1 : -1))
         .slice(1)
-        .map(m => client.unpinMessage(m));
-      client.pinMessage(item);
+        .map(m => client.unpinMessage(m).catch(() => {}));
+      client.pinMessage(item).catch(() => {});
     },
     [chatChannel?.state.messages, client]
   );
@@ -217,7 +434,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       if (!client) {
         return;
       }
-      client.deleteMessage(id);
+      client.deleteMessage(id).catch(() => {});
     },
     [client]
   );
@@ -225,51 +442,6 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
   const onEditMessage = useCallback(() => {}, []);
 
   const formatTypers = useMemo(() => 'format typers', []);
-  const messages: FormatMessageResponse[] = useMemo(() => {
-    let tempMessages = currentChannel?.state.messages || [];
-    tempMessages = tempMessages
-      .slice()
-      .reverse()
-      .filter(m => m?.type !== 'deleted' && !m?.user?.banned);
-    if (tabIndex === 0 || tabIndex === 1) {
-      tempMessages = Object.values(
-        tempMessages
-          .sort((i, j) =>
-            (i.reaction_counts?.upvote || 0) < (j?.reaction_counts?.upvote || 0) ||
-            i.reaction_counts?.upvote === undefined
-              ? -1
-              : 1
-          )
-          .reduce(
-            function (r, a) {
-              const upvote = a.reaction_counts?.upvote || 0;
-              r[upvote] = r[upvote] || [];
-              r[upvote].push(a);
-              return r;
-            },
-            Object.create(null) as FormatMessageResponse[][]
-          )
-      )
-        .sort((i, j) =>
-          (i[0].reaction_counts?.upvote || 0) < (j[0]?.reaction_counts?.upvote || 0) ||
-          i[0].reaction_counts?.upvote === undefined
-            ? -1
-            : 1
-        )
-        .map(m => m.sort((i, j) => (i.created_at > j?.created_at ? -1 : 1)))
-        .flat();
-    }
-    return tempMessages;
-  }, [currentChannel?.state.messages, tabIndex]);
-
-  const pinned: FormatMessageResponse[] = useMemo(() => {
-    const p = messages
-      ?.filter(m => m.pinned)
-      .slice(-2)
-      .sort((i, j) => ((i.pinned_at || 0) < (j.pinned_at || 0) ? -1 : 1));
-
-    return p;
-  }, [messages]);
 
   const renderChat = useCallback(
     () =>
