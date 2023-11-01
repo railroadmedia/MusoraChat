@@ -115,7 +115,7 @@ const ChatList: FunctionComponent<IChatList> = props => {
       <ListItem
         editing={editing}
         new={!!item.new}
-        reversed={!isiOS && !pinned}
+        reversed={!isiOS && !isPinned}
         isDark={isDark}
         appColor={appColor}
         key={item.id}
@@ -155,7 +155,6 @@ const ChatList: FunctionComponent<IChatList> = props => {
       onToggleHidden,
       onTogglePinMessage,
       onToggleReact,
-      pinned,
       tabIndex,
     ]
   );
