@@ -132,15 +132,15 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
               ? -1
               : 1
           )
-          .reduce(
-            function (r, a) {
+          .reduce((r, a) => {
               const upvote = a?.reaction_counts?.upvote || 0;
+            if (a === undefined) {
+              return r;
+            }
               r[upvote] = r[upvote] || [];
               r[upvote].push(a);
               return r;
-            },
-            Object.create(null) as FormatMessageResponse[][]
-          )
+          }, [] as FormatMessageResponse[][])
       )
         .sort((i, j) =>
           (i[0].reaction_counts?.upvote || 0) < (j[0]?.reaction_counts?.upvote || 0) ||
