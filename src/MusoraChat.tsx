@@ -133,13 +133,13 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
               : 1
           )
           .reduce((r, a) => {
-              const upvote = a?.reaction_counts?.upvote || 0;
+            const upvote = a?.reaction_counts?.upvote || 0;
             if (a === undefined) {
               return r;
             }
-              r[upvote] = r[upvote] || [];
-              r[upvote].push(a);
-              return r;
+            r[upvote] = r[upvote] || [];
+            r[upvote].push(a);
+            return r;
           }, [] as FormatMessageResponse[][])
       )
         .sort((i, j) =>
