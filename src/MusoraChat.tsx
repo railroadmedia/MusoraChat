@@ -250,8 +250,14 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           setChatTypers(Array.from(ct));
         }
       }
+      // This triggers re-rendering when receiving a message.
+      // Because it was not seeing the inner state of the channels.
+      const c = channel;
+      setChannel('');
+      setChannel(c);
     },
     [
+      channel,
       chatId,
       chatTypers,
       client?.user,
