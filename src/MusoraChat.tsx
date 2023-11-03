@@ -19,6 +19,7 @@ import {
   FormatMessageResponse,
   Event,
   Message,
+  UnknownType,
 } from 'stream-chat';
 import FloatingMenu, { IFloatingMenuRef } from './FloatingMenu';
 import Participants from './Participants';
@@ -46,6 +47,31 @@ interface IMusoraChat {
   onResourcesPress: (resource: Resource) => void;
   isLandscape: boolean;
 }
+
+interface IEventUser extends UserResponse {
+  accessLevelName: string;
+  avatarUrl: string;
+  banned: boolean;
+  created_at: string;
+  displayName: string;
+  gsToken: string;
+  id: string;
+  last_active: string;
+  online: boolean;
+  profileUrl: string;
+  role: string;
+  updated_at: string;
+}
+
+type IEventType = Event<
+  UnknownType,
+  UnknownType,
+  string,
+  UnknownType,
+  UnknownType,
+  UnknownType,
+  IEventUser
+>;
 
 const isiOS = Platform.OS === 'ios';
 
@@ -165,7 +191,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
   );
 
   const clientEventListener = useCallback(
-    ({ type, user: eventUser, watcher_count, channel_id, reaction, message }: Event) => {
+    ({ type, user: eventUser, watcher_count, channel_id, reaction, message }: IEventType) => {
       if (type === 'health.check') {
         return;
       }
@@ -176,18 +202,18 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       const ct = new Set(chatTypers);
       const qt = new Set(questionsTypers);
       if (tabIndex && channel_id === questionsId) {
-        if (type === 'typing.start' && eventUser?.username) {
-          qt.add(eventUser.username);
+        if (type === 'typing.start' && eventUser?.displayName) {
+          qt.add(eventUser.displayName);
         }
-        if (type === 'typing.stop' && eventUser?.username) {
-          qt.delete(eventUser.username);
+        if (type === 'typing.stop' && eventUser?.displayName) {
+          qt.delete(eventUser.displayName);
         }
       } else if (!tabIndex && channel_id === chatId) {
-        if (type === 'typing.start' && eventUser?.username) {
-          ct.add(eventUser.username);
+        if (type === 'typing.start' && eventUser?.displayName) {
+          ct.add(eventUser.displayName);
         }
-        if (type === 'typing.stop' && eventUser?.username) {
-          ct.delete(eventUser.username);
+        if (type === 'typing.stop' && eventUser?.displayName) {
+          ct.delete(eventUser.displayName);
         }
       }
       if (
@@ -447,7 +473,19 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
   const onToggleReact = useCallback(() => {}, []);
   const onEditMessage = useCallback(() => {}, []);
 
-  const formatTypers = useMemo(() => 'format typers', []);
+  const formatTypers = useMemo(() => {
+    const typers = tabIndex ? questionsTypers : chatTypers;
+    if (!typers.length) {
+      return '';
+    }
+    const firstTwo = typers.slice(0, 2).join(typers.length < 3 ? ' And ' : ', ');
+    const remaining = typers.slice(2, typers.length);
+    const remainingStr = remaining.length
+      ? ` And ${remaining.length} Other${remaining.length === 1 ? '' : 's'}`
+      : '';
+    const endString = ` ${typers.length < 2 ? 'Is' : 'Are'} Typing`;
+    return firstTwo + remainingStr + endString;
+  }, [chatTypers, questionsTypers, tabIndex]);
 
   const renderChat = useCallback(
     () =>
@@ -601,7 +639,10 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             isDark={isDark}
             ref={commentTextInput}
             onSubmitEditing={handleMessage}
-            onChangeText={changedComment => setComment(changedComment)}
+            onChangeText={changedComment => {
+              currentChannel?.keystroke('').catch(() => {});
+              setComment(changedComment);
+            }}
             comment={comment}
             icon={
               <>
