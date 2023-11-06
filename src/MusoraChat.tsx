@@ -28,7 +28,7 @@ import TabMenu from './TabMenu';
 import TextBoxModal from './TextBoxModal';
 import ResourcesItem from './ResourcesItem';
 import { Resource } from 'RNDownload';
-import ChatList from './ChatList';
+import ChatList, { IChatListRef } from './ChatList';
 import { IChannelType, IChatType, IEventType, IEventUser, IResponseType } from './types';
 
 interface IMusoraChat {
@@ -268,6 +268,8 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     ]
   );
 
+  const chatRef = useRef<IChatListRef>(null);
+
   useEffect(() => {
     // SETUP
     if (client) {
@@ -358,6 +360,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
         if (tabIndex === 0) {
           setChatPendingMsg(pendingMessage);
         }
+        chatRef.current?.scrollDown();
         currentChannel
           ?.sendMessage({ text: comment })
           .then(({ message: { id } }) => {
@@ -504,6 +507,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           onAnswered={onAnswered}
           onToggleReact={onToggleReact}
           onEditMessage={onEditMessage}
+          ref={chatRef}
         />
       ),
     [
