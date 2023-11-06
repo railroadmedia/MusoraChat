@@ -41,8 +41,10 @@ const FloatingMenu: ForwardRefExoticComponent<IFloatingMenu & RefAttributes<IFlo
         switch (propAction) {
           case 'onParticipants':
             onParticipants?.();
+            break;
           case 'onBlockedStudents':
             onBlockedStudents?.();
+            break;
         }
       },
       [onBlockedStudents, onParticipants]
