@@ -7,12 +7,12 @@ interface ISvg {
   height?: number;
 }
 
-export const menu = ({ fill, width, height }: ISvg) => (
+export const menu = ({ fill, width, height }: ISvg): JSX.Element => (
   <Svg viewBox='0 0 128 512' fill={fill} width={width} height={height}>
     <Path d='M64 208c26.5 0 48 21.5 48 48s-21.5 48-48 48-48-21.5-48-48 21.5-48 48-48zM16 104c0 26.5 21.5 48 48 48s48-21.5 48-48-21.5-48-48-48-48 21.5-48 48zm0 304c0 26.5 21.5 48 48 48s48-21.5 48-48-21.5-48-48-48-48 21.5-48 48z'></Path>
   </Svg>
 );
-export const sendMsg = ({ fill, width, height }: ISvg) => (
+export const sendMsg = ({ fill, width, height }: ISvg): JSX.Element => (
   <Svg
     viewBox='0 0 48 48'
     fillRule={'evenodd'}
@@ -25,7 +25,7 @@ export const sendMsg = ({ fill, width, height }: ISvg) => (
     <Path d='M4.02,42L46,24L4.02,6L4,20L34,24L4,28L4.02,42Z' fillRule={'nonzero'} />
   </Svg>
 );
-export const arrowLeft = ({ fill, width, height }: ISvg) => (
+export const arrowLeft = ({ fill, width, height }: ISvg): JSX.Element => (
   <Svg
     viewBox='8.63599967956543 2.2715001106262207 27.457000732421875 27.457000732421875'
     width={width}
@@ -38,7 +38,7 @@ export const arrowLeft = ({ fill, width, height }: ISvg) => (
     />
   </Svg>
 );
-export const pin = ({ fill, width, height }: ISvg) => (
+export const pin = ({ fill, width, height }: ISvg): JSX.Element => (
   <Svg viewBox='0 0 14 20' width={width} height={height}>
     <Path
       id='svg_4'
@@ -48,7 +48,7 @@ export const pin = ({ fill, width, height }: ISvg) => (
     />
   </Svg>
 );
-export const vote = ({ fill, width, height }: ISvg) => (
+export const vote = ({ fill, width, height }: ISvg): JSX.Element => (
   <Svg viewBox='0 0 16 16' width={width} height={height}>
     <Path
       fill={fill}
@@ -57,7 +57,7 @@ export const vote = ({ fill, width, height }: ISvg) => (
     />
   </Svg>
 );
-export const close = ({ fill, width, height }: ISvg) => (
+export const close = ({ fill, width, height }: ISvg): JSX.Element => (
   <Svg viewBox='0 0 20 20' width={width} height={height}>
     <Path
       fill={fill}
@@ -66,7 +66,7 @@ export const close = ({ fill, width, height }: ISvg) => (
     />
   </Svg>
 );
-export const coach = ({ fill, width, height }: ISvg) => (
+export const coach = ({ fill, width, height }: ISvg): JSX.Element => (
   <Svg viewBox='0 0 46.3 36.4' width={width} height={height}>
     <Polygon fill={fill} points='23.2,9.3 25.1,11.7 30.3,8.6 27.9,6.4 	' />
     <Path
@@ -78,7 +78,7 @@ export const coach = ({ fill, width, height }: ISvg) => (
     />
   </Svg>
 );
-export const team = ({ fill, width, height }: ISvg) => (
+export const team = ({ fill, width, height }: ISvg): JSX.Element => (
   <Svg viewBox='0 0 80.5 25.5' width={width} height={height}>
     <Path
       fill={fill}
@@ -88,7 +88,7 @@ export const team = ({ fill, width, height }: ISvg) => (
     />
   </Svg>
 );
-export const edge = ({ fill, width, height }: ISvg) => (
+export const edge = ({ fill, width, height }: ISvg): JSX.Element => (
   <Svg viewBox='0 0 65.8 24.2' width={width} height={height}>
     <Path
       fill={fill}
@@ -105,7 +105,7 @@ export const edge = ({ fill, width, height }: ISvg) => (
     />
   </Svg>
 );
-export const lifetime = ({ fill, width, height }: ISvg) => (
+export const lifetime = ({ fill, width, height }: ISvg): JSX.Element => (
   <Svg viewBox='0 0 63.1 30.1' width={width} height={height}>
     <Path
       fill={fill}
@@ -117,7 +117,7 @@ export const lifetime = ({ fill, width, height }: ISvg) => (
     />
   </Svg>
 );
-export const x = ({ fill, width, height }: ISvg) => (
+export const x = ({ fill, width, height }: ISvg): JSX.Element => (
   <Svg viewBox='0 0 32 32' width={width} height={height} fill={fill}>
     <Path
       id='X'
@@ -126,7 +126,7 @@ export const x = ({ fill, width, height }: ISvg) => (
     />
   </Svg>
 );
-export const arrowDown = ({ fill, width }: { width: string; fill: string }) => (
+export const arrowDown = ({ fill, width }: { width: string; fill: string }): JSX.Element => (
   <Svg viewBox='0 0 437 438' style={{ width: width, aspectRatio: 437 / 438 }}>
     <Path
       fill={fill}
@@ -135,7 +135,7 @@ export const arrowDown = ({ fill, width }: { width: string; fill: string }) => (
     />
   </Svg>
 );
-export const pdf = ({ fill, width, height }: ISvg) => (
+export const pdf = ({ fill, width, height }: ISvg): JSX.Element => (
   <Svg width={width} height={height} viewBox='0 0 16 16' fill='none'>
     <Path
       d='M6.00016 8H10.0002M6.00016 10.6667H10.0002M11.3335 14H4.66683C3.93045 14 3.3335 13.403 3.3335 12.6667V3.33333C3.3335 2.59695 3.93045 2 4.66683 2H8.39069C8.5675 2 8.73707 2.07024 8.86209 2.19526L12.4716 5.80474C12.5966 5.92976 12.6668 6.09933 12.6668 6.27614V12.6667C12.6668 13.403 12.0699 14 11.3335 14Z'
@@ -146,7 +146,7 @@ export const pdf = ({ fill, width, height }: ISvg) => (
     />
   </Svg>
 );
-export const download = ({ fill, width, height }: ISvg) => (
+export const download = ({ fill, width, height }: ISvg): JSX.Element => (
   <Svg width={width} height={height} viewBox='0 0 18 18' fill='none'>
     <Path
       d='M2.99988 12L2.99988 12.75C2.99988 13.9926 4.00724 15 5.24988 15L12.7499 15C13.9925 15 14.9999 13.9926 14.9999 12.75L14.9999 12M11.9999 9L8.99988 12M8.99988 12L5.99988 9M8.99988 12L8.99988 3'
@@ -157,7 +157,7 @@ export const download = ({ fill, width, height }: ISvg) => (
     />
   </Svg>
 );
-export const chat = ({ fill, width, height }: ISvg) => (
+export const chat = ({ fill, width, height }: ISvg): JSX.Element => (
   <Svg width={width} height={height} viewBox='0 0 16 16' fill='none'>
     <Path
       d='M5.33333 8.00002H5.34M8 8.00002H8.00667M10.6667 8.00002H10.6733M14 8.00002C14 10.9455 11.3137 13.3334 8 13.3334C6.97382 13.3334 6.00781 13.1044 5.16311 12.7007L2 13.3334L2.92999 10.8534C2.34104 10.0282 2 9.04954 2 8.00002C2 5.0545 4.68629 2.66669 8 2.66669C11.3137 2.66669 14 5.0545 14 8.00002Z'
@@ -168,7 +168,7 @@ export const chat = ({ fill, width, height }: ISvg) => (
     />
   </Svg>
 );
-export const questions = ({ fill, width, height }: ISvg) => (
+export const questions = ({ fill, width, height }: ISvg): JSX.Element => (
   <Svg width={width} height={height} viewBox='0 0 16 16' fill='none'>
     <Path
       d='M5.48511 6C5.85118 5.22321 6.83895 4.66667 8.00004 4.66667C9.4728 4.66667 10.6667 5.5621 10.6667 6.66667C10.6667 7.59963 9.81496 8.38338 8.66285 8.6044C8.30125 8.67377 8.00004 8.96514 8.00004 9.33333M8 11.3333H8.00667M14 8C14 11.3137 11.3137 14 8 14C4.68629 14 2 11.3137 2 8C2 4.68629 4.68629 2 8 2C11.3137 2 14 4.68629 14 8Z'
@@ -179,7 +179,7 @@ export const questions = ({ fill, width, height }: ISvg) => (
     />
   </Svg>
 );
-export const resources = ({ fill, width, height }: ISvg) => (
+export const resources = ({ fill, width, height }: ISvg): JSX.Element => (
   <Svg width={width} height={height} viewBox='0 0 16 16' fill='none'>
     <Path
       d='M8.00016 6.66667V10.6667M8.00016 10.6667L6.00016 8.66667M8.00016 10.6667L10.0002 8.66667M11.3335 14H4.66683C3.93045 14 3.3335 13.403 3.3335 12.6667V3.33333C3.3335 2.59695 3.93045 2 4.66683 2H8.39069C8.5675 2 8.73707 2.07024 8.86209 2.19526L12.4716 5.80474C12.5966 5.92976 12.6668 6.09933 12.6668 6.27614V12.6667C12.6668 13.403 12.0699 14 11.3335 14Z'

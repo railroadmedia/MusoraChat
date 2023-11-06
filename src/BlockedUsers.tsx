@@ -2,6 +2,7 @@ import React, { FunctionComponent, useState, useEffect, useRef, useCallback } fr
 import {
   ActivityIndicator,
   FlatList,
+  StyleProp,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -11,7 +12,7 @@ import FloatingMenu, { IFloatingMenuRef } from './FloatingMenu';
 import ListItem from './ListItem';
 import { arrowLeft } from './svgs';
 
-interface BlockedusersProps {
+interface IBlockedusersProps {
   admin: boolean;
   appColor: string;
   client?: any;
@@ -21,7 +22,7 @@ interface BlockedusersProps {
   onUnblockStudent: (user: any) => void;
 }
 
-const BlockedUsers: FunctionComponent<BlockedusersProps> = props => {
+const BlockedUsers: FunctionComponent<IBlockedusersProps> = props => {
   const { client, onBack, isDark, appColor, admin, onParticipants, onUnblockStudent } = props;
   const [blocked, setBlocked] = useState<{ [key: string]: any }>({});
 
@@ -35,24 +36,31 @@ const BlockedUsers: FunctionComponent<BlockedusersProps> = props => {
   const itemHeight = useRef(0);
   const fListY = useRef(0);
 
+  const toggleBanEventListener = useCallback(
+    ({ user, type }: { user: any; type: string }) => {
+      const tempBlocked = { ...blocked };
+      if (type === 'user.banned') {
+        tempBlocked[user.id] = user;
+      }
+      if (type === 'user.unbanned') {
+        delete tempBlocked[user.id];
+      }
+      setBlocked(tempBlocked);
+    },
+    [blocked]
+  );
+
   useEffect(() => {
     client?.on(toggleBanEventListener);
     client
       .queryUsers({ banned: true }, {}, { limit: 100, offset: 0 })
       .then(({ users }: { users: any[] }) => {
-        let tempBlocked = { ...blocked };
+        const tempBlocked = { ...blocked };
         users.map((b: any) => (tempBlocked[b.id] = b));
         setLoading(false);
       });
     return client?.off(toggleBanEventListener);
-  }, []);
-
-  const toggleBanEventListener = ({ user, type }: { user: any; type: string }) => {
-    let tempBlocked = { ...blocked };
-    if (type === 'user.banned') tempBlocked[user.id] = user;
-    if (type === 'user.unbanned') delete tempBlocked[user.id];
-    setBlocked(tempBlocked);
-  };
+  }, [blocked, client, toggleBanEventListener]);
 
   const renderFLItem = useCallback(
     ({ item }: { item: any }) => (
@@ -68,7 +76,7 @@ const BlockedUsers: FunctionComponent<BlockedusersProps> = props => {
         type={'banned'}
         onTap={() => floatingMenu.current?.close()}
         onToggleBlockStudent={() => {
-          let tempBlocked = { ...blocked };
+          const tempBlocked = { ...blocked };
           delete blocked[item.id];
 
           setBlocked(tempBlocked);
@@ -76,7 +84,7 @@ const BlockedUsers: FunctionComponent<BlockedusersProps> = props => {
         }}
       />
     ),
-    []
+    [admin, appColor, blocked, isDark, onUnblockStudent]
   );
 
   const loadMore = useCallback(async () => {
@@ -90,7 +98,7 @@ const BlockedUsers: FunctionComponent<BlockedusersProps> = props => {
         setBlocked(tempBlocked);
       })
       .finally(() => setLoadingMore(false));
-  }, []);
+  }, [blocked, client]);
 
   return (
     <>
@@ -160,7 +168,7 @@ const BlockedUsers: FunctionComponent<BlockedusersProps> = props => {
 
 export default BlockedUsers;
 
-const setStyles = (isDark: boolean) =>
+const setStyles = (isDark: boolean): StyleProp<any> =>
   StyleSheet.create({
     activityIndicator: { flex: 1, backgroundColor: isDark ? 'black' : 'white' },
     titleText: {

@@ -12,14 +12,14 @@ import {
 import FloatingMenu, { IFloatingMenuRef } from './FloatingMenu';
 import ListItem from './ListItem';
 import { arrowLeft } from './svgs';
-import { Channel } from 'stream-chat';
+import { IChannelType } from './types';
 
 interface IParticipans {
   isDark: boolean;
   appColor: string;
   admin: boolean;
   onlineUsers: number;
-  channel?: Channel;
+  channel?: IChannelType;
   onBack: () => void;
   onBlockedStudents: () => void;
 }

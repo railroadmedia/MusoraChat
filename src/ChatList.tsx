@@ -12,8 +12,9 @@ import {
   View,
 } from 'react-native';
 import { arrowDown, sendMsg, x } from './svgs';
-import { FormatMessageResponse, StreamChat, UserResponse } from 'stream-chat';
+import { FormatMessageResponse, UserResponse } from 'stream-chat';
 import ListItem from './ListItem';
+import { IChatType } from './types';
 
 interface IChatList {
   appColor: string;
@@ -33,7 +34,7 @@ interface IChatList {
   pinned: FormatMessageResponse[];
   messages: FormatMessageResponse[];
   hidden: string[];
-  client: StreamChat;
+  client: IChatType;
 
   onMessageTap: () => void;
   handleMessage: () => void;

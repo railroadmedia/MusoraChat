@@ -7,7 +7,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { Text, TouchableOpacity, View, StyleSheet, Modal } from 'react-native';
+import { Text, TouchableOpacity, View, StyleSheet, Modal, StyleProp } from 'react-native';
 
 import { menu } from './svgs';
 
@@ -35,15 +35,18 @@ const FloatingMenu: ForwardRefExoticComponent<IFloatingMenu & RefAttributes<IFlo
     const [maxWidth, setMaxWidth] = useState(0);
     const [modalVisible, setModalVisible] = useState(false);
 
-    const pickItem = useCallback((propAction: string) => {
-      setMaxWidth(0);
-      switch (propAction) {
-        case 'onParticipants':
-          onParticipants?.();
-        case 'onBlockedStudents':
-          onBlockedStudents?.();
-      }
-    }, []);
+    const pickItem = useCallback(
+      (propAction: string) => {
+        setMaxWidth(0);
+        switch (propAction) {
+          case 'onParticipants':
+            onParticipants?.();
+          case 'onBlockedStudents':
+            onBlockedStudents?.();
+        }
+      },
+      [onBlockedStudents, onParticipants]
+    );
 
     useImperativeHandle(ref, () => ({
       close: () => setMaxWidth(0),
@@ -131,7 +134,7 @@ const FloatingMenu: ForwardRefExoticComponent<IFloatingMenu & RefAttributes<IFlo
 
 export default FloatingMenu;
 
-const setStyles = (isDark: boolean) =>
+const setStyles = (isDark: boolean): StyleProp<any> =>
   StyleSheet.create({
     container: {
       alignItems: 'flex-end',

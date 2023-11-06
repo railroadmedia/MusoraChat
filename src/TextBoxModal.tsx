@@ -22,7 +22,7 @@ interface ITextBoxModal {
   isDark: boolean;
 }
 
-let isiOS = Platform.OS === 'ios';
+const isiOS = Platform.OS === 'ios';
 
 const TextBoxModal = forwardRef<TextInput, ITextBoxModal>((props, ref) => {
   const { onClose, onShow, visible, isDark, onChangeText, onSubmitEditing, comment, icon } = props;
@@ -48,7 +48,7 @@ const TextBoxModal = forwardRef<TextInput, ITextBoxModal>((props, ref) => {
                 <TextInput
                   multiline={true}
                   blurOnSubmit={true}
-                  style={[styles.textInput]}
+                  style={styles.textInput}
                   onChangeText={onChangeText}
                   placeholder={'Say something...'}
                   onSubmitEditing={onSubmitEditing}

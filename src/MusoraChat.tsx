@@ -15,11 +15,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   StreamChat,
   UserResponse,
-  Channel,
   FormatMessageResponse,
-  Event,
   Message,
   UnknownType,
+  LiteralStringForUnion,
 } from 'stream-chat';
 import FloatingMenu, { IFloatingMenuRef } from './FloatingMenu';
 import Participants from './Participants';
@@ -30,6 +29,7 @@ import TextBoxModal from './TextBoxModal';
 import ResourcesItem from './ResourcesItem';
 import { Resource } from 'RNDownload';
 import ChatList from './ChatList';
+import { IChannelType, IChatType, IEventType, IEventUser, IResponseType } from './types';
 
 interface IMusoraChat {
   appColor: string;
@@ -39,39 +39,11 @@ interface IMusoraChat {
   onRemoveAllMessages: (userId: string) => void;
   onToggleBlockStudent: (blockedUser?: UserResponse | null) => void;
   questionsId: string;
-  user: {
-    id: string;
-    gsToken: string;
-  };
+  user: IEventUser;
   resources: Resource[];
   onResourcesPress: (resource: Resource) => void;
   isLandscape: boolean;
 }
-
-interface IEventUser extends UserResponse {
-  accessLevelName: string;
-  avatarUrl: string;
-  banned: boolean;
-  created_at: string;
-  displayName: string;
-  gsToken: string;
-  id: string;
-  last_active: string;
-  online: boolean;
-  profileUrl: string;
-  role: string;
-  updated_at: string;
-}
-
-type IEventType = Event<
-  UnknownType,
-  UnknownType,
-  string,
-  UnknownType,
-  UnknownType,
-  UnknownType,
-  IEventUser
->;
 
 const isiOS = Platform.OS === 'ios';
 
@@ -107,11 +79,11 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
   const [hidden, setHidden] = useState<string[]>([]);
   const [channel, setChannel] = useState('chatChannel');
 
-  const [client, setClient] = useState<StreamChat | undefined>();
+  const [client, setClient] = useState<IChatType | undefined>();
   const [me, setMe] = useState<UserResponse | undefined>();
 
-  const [chatChannel, setChatChannel] = useState<Channel | undefined>();
-  const [questionsChannel, setQuestionsChannel] = useState<Channel | undefined>();
+  const [chatChannel, setChatChannel] = useState<IChannelType | undefined>();
+  const [questionsChannel, setQuestionsChannel] = useState<IChannelType | undefined>();
 
   const [questionPending, setQuestionPendingMsg] = useState<any>();
   const [chatPending, setChatPendingMsg] = useState<any>();
@@ -137,7 +109,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     [editMessage, comment]
   );
 
-  const messages: FormatMessageResponse[] = useMemo(() => {
+  const messages: IResponseType[] = useMemo(() => {
     let tempMessages = currentChannel?.state.messages || [];
     tempMessages = tempMessages
       .slice()
@@ -166,7 +138,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             r[upvote] = r[upvote] || [];
             r[upvote].push(a);
             return r;
-          }, [] as FormatMessageResponse[][])
+          }, [] as IResponseType[][])
       )
         .sort((i, j) =>
           (i[0].reaction_counts?.upvote || 0) < (j[0]?.reaction_counts?.upvote || 0) ||
@@ -302,7 +274,15 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       return;
     }
 
-    const tempClient = StreamChat.getInstance(clientId, {
+    const tempClient = StreamChat.getInstance<
+      UnknownType,
+      UnknownType,
+      LiteralStringForUnion,
+      UnknownType,
+      UnknownType,
+      UnknownType,
+      IEventUser
+    >(clientId, {
       timeout: 10000,
     });
 
