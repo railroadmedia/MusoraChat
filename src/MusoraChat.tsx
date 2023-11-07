@@ -446,7 +446,17 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     },
     [client]
   );
-  const onToggleReact = useCallback(() => {}, []);
+  const onToggleReact = useCallback(
+    (item: IMessage) => {
+      if (item.own_reactions?.some(r => r.type === 'upvote')) {
+        questionsChannel?.deleteReaction(item.id, 'upvote').catch(() => {});
+      } else {
+        questionsChannel?.sendReaction(item.id, { type: 'upvote' }).catch(() => {});
+      }
+    },
+    [questionsChannel]
+  );
+
   const onEditMessage = useCallback(() => {}, []);
 
   const formatTypers = useMemo(() => {
