@@ -43,7 +43,7 @@ export const pin = ({ fill, width, height }: ISvg): JSX.Element => (
     <Path
       id='svg_4'
       fill={fill}
-      fill-rule='evenodd'
+      fillRule='evenodd'
       d='m11,7l0,-5l1,0c0.55,0 1,-0.45 1,-1l0,0c0,-0.55 -0.45,-1 -1,-1l-10,0c-0.55,0 -1,0.45 -1,1l0,0c0,0.55 0.45,1 1,1l1,0l0,5c0,1.66 -1.34,3 -3,3l0,0l0,2l5.97,0l0,7l1,1l1,-1l0,-7l6.03,0l0,-2l0,0c-1.66,0 -3,-1.34 -3,-3z'
     />
   </Svg>

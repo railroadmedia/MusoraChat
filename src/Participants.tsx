@@ -122,11 +122,8 @@ const Participans: FunctionComponent<IParticipans> = props => {
 
   return (
     <>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <TouchableOpacity
-          onPress={onBack}
-          style={{ padding: 10, flexDirection: 'row', alignItems: 'center' }}
-        >
+      <View style={styles.backContainer}>
+        <TouchableOpacity onPress={onBack} style={styles.backButton}>
           {arrowLeft({
             height: 12,
             width: 12,
@@ -187,7 +184,19 @@ export default Participans;
 
 const setStyles: StyleProp<any> = (isDark: boolean) =>
   StyleSheet.create({
-    activityindicator: { flex: 1, backgroundColor: isDark ? 'black' : 'white' },
+    backContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    backButton: {
+      padding: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    activityindicator: {
+      flex: 1,
+      backgroundColor: isDark ? 'black' : 'white',
+    },
     titleText: {
       color: isDark ? '#445F74' : '#879097',
       fontFamily: 'OpenSans',

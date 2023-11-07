@@ -115,11 +115,8 @@ const BlockedUsers: FunctionComponent<IBlockedusersProps> = props => {
 
   return (
     <>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <TouchableOpacity
-          onPress={onBack}
-          style={{ padding: 10, flexDirection: 'row', alignItems: 'center' }}
-        >
+      <View style={styles.backContainer}>
+        <TouchableOpacity onPress={onBack} style={styles.backButton}>
           {arrowLeft({ height: 12, width: 12, fill: '#4D5356' })}
           <Text style={styles.titleText}>BLOCKED STUDENTS</Text>
         </TouchableOpacity>
@@ -183,7 +180,19 @@ export default BlockedUsers;
 
 const setStyles = (isDark: boolean): StyleProp<any> =>
   StyleSheet.create({
-    activityIndicator: { flex: 1, backgroundColor: isDark ? 'black' : 'white' },
+    backContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    backButton: {
+      padding: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    activityIndicator: {
+      flex: 1,
+      backgroundColor: isDark ? 'black' : 'white',
+    },
     titleText: {
       color: isDark ? '#445F74' : '#879097',
       fontFamily: 'OpenSans',

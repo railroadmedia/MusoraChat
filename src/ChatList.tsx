@@ -178,7 +178,7 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
     return (
       <>
         {pinned.map(item => renderChatFLItem({ item }, true))}
-        <View style={{ flex: 1 }}>
+        <View style={styles.chatContainer}>
           <FlatList
             key={tabIndex}
             inverted={isiOS}
@@ -222,20 +222,15 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
         </View>
         <TouchableOpacity
           onPress={onTextBoxPress}
-          style={[
-            styles.saySomethingTOpacity,
-            {
-              backgroundColor: isKeyboardVisible ? 'transparent' : isDark ? 'black' : 'white',
-            },
-          ]}
+          style={[styles.saySomethingTOpacity, isKeyboardVisible ? styles.transparent : {}]}
         >
           <Text
-            style={[styles.placeHolderText, { opacity: isKeyboardVisible ? 0 : 1 }]}
+            style={[styles.placeHolderText, isKeyboardVisible ? styles.transparent : {}]}
             numberOfLines={1}
           >
             {comment || `${tabIndex ? 'Ask a question' : 'Say something'}...`}
           </Text>
-          <TouchableOpacity onPress={handleMessage} style={{ padding: 15 }}>
+          <TouchableOpacity onPress={handleMessage} style={styles.sendButton}>
             {(editing ? x : sendMsg)({
               height: 12,
               width: 12,
@@ -243,7 +238,7 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
             })}
           </TouchableOpacity>
         </TouchableOpacity>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+        <View style={styles.viewers}>
           <Text style={styles.chatEventsInfo}>{viewers} Online</Text>
           <Text style={styles.chatEventsInfo}>{typers}</Text>
         </View>
@@ -254,6 +249,9 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
 
 const localStyles: StyleProp<any> = (isDark: boolean, appColor: string) =>
   StyleSheet.create({
+    chatContainer: {
+      flex: 1,
+    },
     flatList: {
       flex: 1,
       backgroundColor: isDark ? 'black' : 'white',
@@ -288,6 +286,7 @@ const localStyles: StyleProp<any> = (isDark: boolean, appColor: string) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      backgroundColor: isDark ? 'black' : 'white',
     },
     placeHolderText: {
       flex: 1,
@@ -300,6 +299,17 @@ const localStyles: StyleProp<any> = (isDark: boolean, appColor: string) =>
       paddingTop: 0,
       color: isDark ? '#445F74' : '#879097',
       fontFamily: 'OpenSans',
+    },
+    sendButton: {
+      padding: 15,
+    },
+    viewers: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    transparent: {
+      backgroundColor: 'transparent',
+      opacity: 0,
     },
   });
 

@@ -95,7 +95,7 @@ const FloatingMenu: ForwardRefExoticComponent<IFloatingMenu & RefAttributes<IFlo
               )
               .map(({ text, action }) => (
                 <TouchableOpacity key={text} onPress={action}>
-                  <Text style={{ ...styles.text, fontFamily: 'OpenSans' }}>{text}</Text>
+                  <Text style={[styles.text, styles.optionStyle]}>{text}</Text>
                 </TouchableOpacity>
               ))}
           </View>
@@ -107,10 +107,7 @@ const FloatingMenu: ForwardRefExoticComponent<IFloatingMenu & RefAttributes<IFlo
             visible={modalVisible}
             onRequestClose={() => setModalVisible(false)}
           >
-            <TouchableOpacity
-              style={{ flex: 1, justifyContent: 'flex-end' }}
-              onPress={() => setModalVisible(false)}
-            >
+            <TouchableOpacity style={styles.clearAllModal} onPress={() => setModalVisible(false)}>
               <View style={styles.modalContainer}>
                 <View style={styles.pill} />
                 <Text style={styles.confirmModalText}>
@@ -160,6 +157,13 @@ const setStyles = (isDark: boolean): StyleProp<any> =>
       fontFamily: 'OpenSans-Bold',
       padding: 5,
       paddingHorizontal: 20,
+    },
+    optionStyle: {
+      fontFamily: 'OpenSans',
+    },
+    clarAllModal: {
+      flex: 1,
+      justifyContent: 'flex-end',
     },
     modalContainer: {
       backgroundColor: '#081825',

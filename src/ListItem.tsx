@@ -179,7 +179,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
         msgComponent={
           <Text style={styles.confirmModalText}>
             Are you sure you want to delete all of{' '}
-            <Text style={{ fontFamily: 'OpenSans-Bold' }}>{item.user?.displayName}</Text> messages?
+            <Text style={styles.bold}>{item.user?.displayName}</Text> messages?
           </Text>
         }
         onCancel={() => setRemoveAllModalVisible(false)}
@@ -194,6 +194,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
       isDark,
       removeAllModalVisible,
       styles.confirmModalText,
+      styles.bold,
       item.user?.displayName,
       hideAllModals,
       onRemoveAllMessages,
@@ -209,7 +210,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
         msgComponent={
           <Text style={styles.confirmModalText}>
             Are you sure you want to {item.user?.banned ? 'unblock ' : 'block '}
-            <Text style={{ fontFamily: 'OpenSans-Bold' }}>{item.user?.displayName}</Text>
+            <Text style={styles.bold}>{item.user?.displayName}</Text>
             {item.user?.banned ? '?' : ' from this chat?'}
           </Text>
         }
@@ -230,6 +231,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
       item.user?.displayName,
       hideAllModals,
       onToggleBlockStudent,
+      styles.bold,
     ]
   );
 
@@ -242,9 +244,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
         msgComponent={
           <Text style={styles.confirmModalText}>
             Are you sure you want to mark this question as answered?{`\n`}
-            <Text style={{ fontFamily: 'OpenSans-Bold' }}>
-              This will remove the question from the chat.
-            </Text>
+            <Text style={styles.bold}>This will remove the question from the chat.</Text>
           </Text>
         }
         onCancel={() => setAnsweredModalVisible(false)}
@@ -297,38 +297,26 @@ const ListItem: FunctionComponent<IListItem> = props => {
             borderRadius: 99,
             overflow: 'hidden',
             borderWidth: 2,
-            borderColor,
+            borderColor: borderColor,
           }}
         >
-          <Image source={{ uri: item.user?.avatarUrl }} style={{ height: 31, aspectRatio: 1 }} />
+          <Image source={{ uri: item.user?.avatarUrl }} style={styles.avatar} />
           <View
-            style={{
-              width: '100%',
-              height: 5,
-              backgroundColor: borderColor,
-              position: 'absolute',
-              bottom: 0,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            style={[
+              styles.avatarBorder,
+              {
+                backgroundColor: borderColor,
+              },
+            ]}
           >
             <>{userTagIcon}</>
           </View>
         </View>
-        <View style={{ paddingLeft: 10, flex: 1 }}>
+        <View style={styles.msgContainer}>
           {pinned && (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              {pin({ width: 9, fill: '#9EA1A6' })}
-              <Text
-                style={{
-                  fontFamily: 'OpenSans',
-                  color: '#9EA1A6',
-                  fontSize: 10,
-                }}
-              >
-                {' '}
-                Pinned
-              </Text>
+            <View style={styles.pinnedContainer}>
+              {pin({ width: 9, height: 9, fill: '#9EA1A6' })}
+              <Text style={styles.pinned}> Pinned</Text>
             </View>
           )}
           <View style={styles.msgHeaderContainer}>
@@ -350,14 +338,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
             </Text>
           )}
           {type === 'question' && (
-            <TouchableOpacity
-              onPress={onToggleReact}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                padding: 5,
-              }}
-            >
+            <TouchableOpacity onPress={onToggleReact} style={styles.reactButton}>
               {vote({
                 width: 10,
                 height: 10,
@@ -386,15 +367,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
         </View>
         {admin && type === 'banned' && (
           <>
-            <Text
-              style={{
-                color: isDark ? 'white' : 'black',
-                fontFamily: 'OpenSans',
-                paddingHorizontal: 5,
-              }}
-            >
-              Unblock
-            </Text>
+            <Text style={styles.unblock}>Unblock</Text>
             {close({ width: 15, height: 15, fill: '#9EA1A6' })}
           </>
         )}
@@ -406,10 +379,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
         onRequestClose={() => setOptionsModalVisible(false)}
         supportedOrientations={['landscape', 'portrait']}
       >
-        <TouchableOpacity
-          style={{ flex: 1, justifyContent: 'flex-end' }}
-          onPress={() => setOptionsModalVisible(false)}
-        >
+        <TouchableOpacity style={styles.modal} onPress={() => setOptionsModalVisible(false)}>
           <View style={styles.modalContainer}>
             <View style={styles.pill} />
             {admin && (
@@ -482,6 +452,18 @@ const setStyles: StyleProp<any> = (isDark: boolean) =>
       color: isDark ? 'white' : 'black',
       fontFamily: 'OpenSans-Bold',
     },
+    avatarBorder: {
+      width: '100%',
+      height: 5,
+      position: 'absolute',
+      bottom: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatar: {
+      height: 31,
+      aspectRatio: 1,
+    },
     editing: {
       fontFamily: 'OpenSans-Italic',
       color: '#4D5356',
@@ -492,10 +474,18 @@ const setStyles: StyleProp<any> = (isDark: boolean) =>
       color: '#4D5356',
       fontSize: 8,
     },
+    msgContainer: {
+      paddingLeft: 10,
+      flex: 1,
+    },
     msgText: {
       fontFamily: 'OpenSans',
       fontWeight: 'normal',
       color: isDark ? 'white' : 'black',
+    },
+    modal: {
+      flex: 1,
+      justifyContent: 'flex-end',
     },
     modalContainer: {
       backgroundColor: isDark ? '#00101D' : '#F7F9FC',
@@ -538,5 +528,27 @@ const setStyles: StyleProp<any> = (isDark: boolean) =>
       borderRadius: 100,
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    bold: {
+      fontFamily: 'OpenSans-Bold',
+    },
+    unblock: {
+      color: isDark ? 'white' : 'black',
+      fontFamily: 'OpenSans',
+      paddingHorizontal: 5,
+    },
+    reactButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 5,
+    },
+    pinned: {
+      fontFamily: 'OpenSans',
+      color: '#9EA1A6',
+      fontSize: 10,
+    },
+    pinnedContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
     },
   });

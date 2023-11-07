@@ -37,12 +37,9 @@ const TextBoxModal = forwardRef<TextInput, ITextBoxModal>((props, ref) => {
       transparent={true}
       visible={visible}
     >
-      <TouchableOpacity style={{ flex: 1, justifyContent: 'flex-end' }} onPress={onClose}>
-        <SafeAreaView style={{ flex: 1 }} edges={['bottom', 'top']}>
-          <KeyboardAvoidingView
-            style={{ flex: 1, justifyContent: 'flex-end' }}
-            behavior={isiOS ? 'padding' : undefined}
-          >
+      <TouchableOpacity style={styles.modalContainer} onPress={onClose}>
+        <SafeAreaView style={styles.safeArea} edges={['bottom', 'top']}>
+          <KeyboardAvoidingView style={styles.KAView} behavior={isiOS ? 'padding' : undefined}>
             <View style={styles.textInputContainer}>
               <View style={styles.whiteBG}>
                 <TextInput
@@ -72,6 +69,17 @@ const TextBoxModal = forwardRef<TextInput, ITextBoxModal>((props, ref) => {
 
 const localStyles: StyleProp<any> = (isDark: boolean) =>
   StyleSheet.create({
+    modalContainer: {
+      flex: 1,
+      justifyContent: 'flex-end',
+    },
+    safeArea: {
+      flex: 1,
+    },
+    KAView: {
+      flex: 1,
+      justifyContent: 'flex-end',
+    },
     textInputContainer: {
       flexDirection: 'row',
       backgroundColor: isDark ? '#00101D' : '#F2F3F5',
