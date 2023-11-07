@@ -135,42 +135,36 @@ const BlockedUsers: FunctionComponent<IBlockedusersProps> = props => {
           style={styles.activityIndicator}
         />
       ) : (
-        <>
-          {
-            <FlatList
-              onScroll={({
-                nativeEvent: {
-                  contentOffset: { y },
-                },
-              }) => (fListY.current = y >= 0 ? y : 0)}
-              windowSize={10}
-              data={Object.values(blocked)}
-              style={styles.flatList}
-              initialNumToRender={5}
-              maxToRenderPerBatch={10}
-              onEndReachedThreshold={0.01}
-              removeClippedSubviews={true}
-              keyboardShouldPersistTaps='handled'
-              renderItem={renderFLItem}
-              onEndReached={loadMore}
-              keyExtractor={item => item.id.toString()}
-              ListEmptyComponent={
-                <Text style={styles.emptyListText}>
-                  There are no students blocked from this chat.
-                </Text>
-              }
-              ListFooterComponent={
-                <ActivityIndicator
-                  size='small'
-                  color={isDark ? 'white' : 'black'}
-                  animating={loadingMore}
-                  style={styles?.activityIndicator}
-                />
-              }
-              ref={flatList}
+        <FlatList
+          onScroll={({
+            nativeEvent: {
+              contentOffset: { y },
+            },
+          }) => (fListY.current = y >= 0 ? y : 0)}
+          windowSize={10}
+          data={Object.values(blocked)}
+          style={styles.flatList}
+          initialNumToRender={5}
+          maxToRenderPerBatch={10}
+          onEndReachedThreshold={0.01}
+          removeClippedSubviews={true}
+          keyboardShouldPersistTaps='handled'
+          renderItem={renderFLItem}
+          onEndReached={loadMore}
+          keyExtractor={item => item.id.toString()}
+          ListEmptyComponent={
+            <Text style={styles.emptyListText}>There are no students blocked from this chat.</Text>
+          }
+          ListFooterComponent={
+            <ActivityIndicator
+              size='small'
+              color={isDark ? 'white' : 'black'}
+              animating={loadingMore}
+              style={styles?.activityIndicator}
             />
           }
-        </>
+          ref={flatList}
+        />
       )}
       <FloatingMenu
         admin={admin}
