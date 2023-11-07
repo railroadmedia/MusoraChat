@@ -88,7 +88,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
     switch (aln) {
       case 'edge': {
         setBorderColor(appColor);
-        setUserTagIcon(edge({ height: 4, fill: 'white' }));
+        setUserTagIcon(edge({ height: 4, width: 11, fill: 'white' }));
         break;
       }
       case 'piano': {
@@ -97,17 +97,17 @@ const ListItem: FunctionComponent<IListItem> = props => {
       }
       case 'team': {
         setBorderColor('black');
-        setUserTagIcon(team({ height: 4, fill: 'white' }));
+        setUserTagIcon(team({ height: 4, width: 11, fill: 'white' }));
         break;
       }
       case 'lifetime': {
         setBorderColor('#07B3FF');
-        setUserTagIcon(lifetime({ height: 4, fill: 'white' }));
+        setUserTagIcon(lifetime({ height: 4, width: 11, fill: 'white' }));
         break;
       }
       case 'coach': {
         setBorderColor('#FAA300');
-        setUserTagIcon(coach({ height: 4, fill: 'white' }));
+        setUserTagIcon(coach({ height: 4, width: 11, fill: 'white' }));
         break;
       }
     }
