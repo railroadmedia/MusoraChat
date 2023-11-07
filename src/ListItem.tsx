@@ -257,15 +257,35 @@ const ListItem: FunctionComponent<IListItem> = props => {
     [answeredModalVisible, onAnswered, hideAllModals, styles, appColor, isDark]
   );
 
+  const onItemPress = useCallback(() => {
+    onTap?.();
+    if (admin && type === 'banned') {
+      return pickItem('blockModalVisible');
+    }
+    if (admin || own || pinned) {
+      setOptionsModalVisible(true);
+    }
+  }, [admin, onTap, own, pickItem, pinned, type]);
+
+  const onItemLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      if (position === 'absolute') {
+        setPosition('relative');
+      }
+      onLayout?.(e);
+    },
+    [onLayout, position]
+  );
+
+  const isUpvoted = useMemo(
+    () => item.own_reactions?.some((r: { type: string }) => r.type === 'upvote'),
+    [item]
+  );
+
   return (
     <>
       <TouchableOpacity
-        onLayout={e => {
-          if (position === 'absolute') {
-            setPosition('relative');
-          }
-          onLayout?.(e);
-        }}
+        onLayout={onItemLayout}
         style={[
           {
             position: position,
@@ -282,15 +302,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
           },
           reversed ? { transform: [{ rotate: '180deg' }] } : {},
         ]}
-        onPress={() => {
-          onTap?.();
-          if (admin && type === 'banned') {
-            return pickItem('blockModalVisible');
-          }
-          if (admin || own || pinned) {
-            setOptionsModalVisible(true);
-          }
-        }}
+        onPress={onItemPress}
       >
         <View
           style={{
@@ -342,11 +354,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
               {vote({
                 width: 10,
                 height: 10,
-                fill: item.own_reactions?.some((r: { type: string }) => r.type === 'upvote')
-                  ? '#00BC75'
-                  : isDark
-                  ? 'white'
-                  : 'black',
+                fill: isUpvoted ? '#00BC75' : isDark ? 'white' : 'black',
               })}
               <Text
                 style={{
@@ -354,7 +362,7 @@ const ListItem: FunctionComponent<IListItem> = props => {
                     ? isDark
                       ? 'black'
                       : 'white'
-                    : item.own_reactions?.some((r: { type: string }) => r.type === 'upvote')
+                    : isUpvoted
                     ? '#00BC75'
                     : appColor,
                   paddingHorizontal: 5,

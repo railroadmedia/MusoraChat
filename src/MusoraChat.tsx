@@ -482,6 +482,17 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     return firstTwo + remainingStr + endString;
   }, [chatTypers, questionsTypers, tabIndex]);
 
+  const onClearAllQuestions = useCallback(() => {
+    tabIndex
+      ? () =>
+          questionsChannel?.state.messages.map((m: IMessage) => {
+            if (m.id !== undefined) {
+              client?.deleteMessage(m.id).catch(() => {});
+            }
+          })
+      : undefined;
+  }, [client, questionsChannel, tabIndex]);
+
   const renderChat = useCallback(
     () =>
       me === undefined || client === undefined ? (
@@ -614,16 +625,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             appColor={appColor}
             ref={floatingMenu}
             admin={me?.role === 'admin'}
-            onClearAllQuestions={
-              tabIndex
-                ? () =>
-                    questionsChannel?.state.messages.map((m: IMessage) => {
-                      if (m.id !== undefined) {
-                        client?.deleteMessage(m.id).catch(() => {});
-                      }
-                    })
-                : undefined
-            }
+            onClearAllQuestions={onClearAllQuestions}
             onParticipants={() => setShowParticipants(true)}
             onBlockedStudents={() => setShowBlocked(true)}
           />
