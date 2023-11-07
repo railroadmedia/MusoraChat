@@ -490,7 +490,6 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
         <ChatList
           appColor={appColor}
           isDark={isDark}
-          isiOS={isiOS}
           tabIndex={tabIndex}
           viewers={tabIndex ? questionsViewers : chatViewers}
           typers={formatTypers}

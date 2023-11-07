@@ -12,6 +12,7 @@ import {
   LayoutChangeEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
   StyleProp,
   StyleSheet,
   Text,
@@ -25,7 +26,6 @@ import { IChatType, IChatUser, IMessage } from './types';
 interface IChatList {
   appColor: string;
   isDark: boolean;
-  isiOS: boolean;
   tabIndex: number;
   viewers: number;
   typers: string;
@@ -60,6 +60,8 @@ interface IChatList {
   onEditMessage: (message: IMessage) => void;
 }
 
+const isiOS = Platform.OS === 'ios';
+
 export interface IChatListRef {
   scrollDown: () => void;
 }
@@ -69,7 +71,6 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
     const {
       appColor,
       isDark,
-      isiOS,
       tabIndex,
       viewers,
       typers,
@@ -159,7 +160,6 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
         editing,
         hidden,
         isDark,
-        isiOS,
         me?.displayName,
         me?.role,
         onAnswered,
