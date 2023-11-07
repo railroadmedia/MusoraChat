@@ -86,7 +86,14 @@ const BlockedUsers: FunctionComponent<IBlockedusersProps> = props => {
         onLayout={({ nativeEvent: ne }: LayoutChangeEvent) =>
           (itemHeight.current = ne.layout.height)
         }
-        item={{ user: item }}
+        item={{
+          user: item,
+          id: '',
+          created_at: new Date(),
+          updated_at: new Date(),
+          pinned_at: new Date(),
+          status: '',
+        }}
         center
         admin={admin}
         type={'banned'}
