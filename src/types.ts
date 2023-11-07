@@ -8,16 +8,16 @@ import {
   UserResponse,
 } from 'stream-chat';
 
-export type IResponseType = FormatMessageResponse<
+export type IMessage = FormatMessageResponse<
   UnknownType,
   UnknownType,
   LiteralStringForUnion,
   UnknownType,
   UnknownType,
-  IEventUser
+  IChatUser
 >;
 
-export interface IEventUser extends UserResponse {
+export interface IChatUser extends UserResponse {
   accessLevelName?: string;
   avatarUrl: string;
   banned: boolean;
@@ -39,7 +39,7 @@ export type IEventType = Event<
   UnknownType,
   UnknownType,
   UnknownType,
-  IEventUser
+  IChatUser
 >;
 
 export type IChatType = StreamChat<
@@ -49,7 +49,7 @@ export type IChatType = StreamChat<
   UnknownType,
   UnknownType,
   UnknownType,
-  IEventUser
+  IChatUser
 >;
 
 export type IChannelType = Channel<
@@ -59,5 +59,5 @@ export type IChannelType = Channel<
   UnknownType,
   UnknownType,
   UnknownType,
-  IEventUser
+  IChatUser
 >;

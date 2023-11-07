@@ -19,9 +19,8 @@ import {
   View,
 } from 'react-native';
 import { arrowDown, sendMsg, x } from './svgs';
-import { FormatMessageResponse, UserResponse } from 'stream-chat';
 import ListItem from './ListItem';
-import { IChatType } from './types';
+import { IChatType, IChatUser, IMessage } from './types';
 
 interface IChatList {
   appColor: string;
@@ -36,10 +35,10 @@ interface IChatList {
   showScrollToTop: boolean;
   isKeyboardVisible: boolean;
 
-  me: UserResponse;
+  me: IChatUser;
 
-  pinned: FormatMessageResponse[];
-  messages: FormatMessageResponse[];
+  pinned: IMessage[];
+  messages: IMessage[];
   hidden: string[];
   client: IChatType;
 
@@ -53,12 +52,12 @@ interface IChatList {
   comment: string;
 
   onRemoveAllMessages: (userId: string) => void;
-  onToggleBlockStudent: (user?: UserResponse | null) => void;
-  onTogglePinMessage: (message: FormatMessageResponse) => void;
+  onToggleBlockStudent: (user?: IChatUser | null) => void;
+  onTogglePinMessage: (message: IMessage) => void;
   onToggleHidden: (id: string) => void;
   onAnswered: (id: string) => void;
-  onToggleReact: (id: string) => void;
-  onEditMessage: (message: FormatMessageResponse) => void;
+  onToggleReact: (message: IMessage) => void;
+  onEditMessage: (message: IMessage) => void;
 }
 
 export interface IChatListRef {
@@ -107,7 +106,7 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
 
     const styles = localStyles(isDark, appColor);
 
-    const flatList = useRef<FlatList<FormatMessageResponse>>(null);
+    const flatList = useRef<FlatList<IMessage>>(null);
     const fListY = useRef(0);
 
     useImperativeHandle(ref, () => ({
@@ -115,7 +114,7 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
     }));
 
     const onMessageLayout = useCallback(
-      ({ nativeEvent: ne }: LayoutChangeEvent, item: FormatMessageResponse) => {
+      ({ nativeEvent: ne }: LayoutChangeEvent, item: IMessage) => {
         if (item.new) {
           delete item.new;
           flatList.current?.scrollToOffset({
@@ -128,7 +127,7 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
     );
 
     const renderChatFLItem = useCallback(
-      ({ item }: { item: FormatMessageResponse }, isPinned: boolean) => (
+      ({ item }: { item: IMessage }, isPinned: boolean) => (
         <ListItem
           editing={editing}
           new={!!item.new}
@@ -150,7 +149,7 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
           onTogglePinMessage={() => onTogglePinMessage(item)}
           onToggleHidden={onToggleHidden}
           onAnswered={() => onAnswered(item.id)}
-          onToggleReact={() => onToggleReact(item.id)}
+          onToggleReact={() => onToggleReact(item)}
           onEditMessage={() => onEditMessage(item)}
         />
       ),
@@ -187,7 +186,7 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
             windowSize={10}
             data={messages}
             style={[styles.flatList, isiOS ? {} : { transform: [{ rotate: '180deg' }] }]}
-            initialNumToRender={1}
+            initialNumToRender={10}
             maxToRenderPerBatch={10}
             onEndReachedThreshold={0.01}
             removeClippedSubviews={true}

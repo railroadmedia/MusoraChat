@@ -12,14 +12,7 @@ import {
 
 import AndroidKeyboardAdjust from 'react-native-android-keyboard-adjust';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  StreamChat,
-  UserResponse,
-  FormatMessageResponse,
-  Message,
-  UnknownType,
-  LiteralStringForUnion,
-} from 'stream-chat';
+import { StreamChat, Message, UnknownType, LiteralStringForUnion } from 'stream-chat';
 import FloatingMenu, { IFloatingMenuRef } from './FloatingMenu';
 import Participants from './Participants';
 import BlockedUsers from './BlockedUsers';
@@ -29,7 +22,7 @@ import TextBoxModal from './TextBoxModal';
 import ResourcesItem from './ResourcesItem';
 import { Resource } from 'RNDownload';
 import ChatList, { IChatListRef } from './ChatList';
-import { IChannelType, IChatType, IEventType, IEventUser, IResponseType } from './types';
+import { IChannelType, IChatType, IEventType, IChatUser, IMessage } from './types';
 
 interface IMusoraChat {
   appColor: string;
@@ -37,9 +30,9 @@ interface IMusoraChat {
   clientId: string;
   isDark: boolean;
   onRemoveAllMessages: (userId: string) => void;
-  onToggleBlockStudent: (blockedUser?: UserResponse | null) => void;
+  onToggleBlockStudent: (blockedUser?: IChatUser | null) => void;
   questionsId: string;
-  user: IEventUser;
+  user: IChatUser;
   resources: Resource[];
   onResourcesPress: (resource: Resource) => void;
   isLandscape: boolean;
@@ -80,7 +73,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
   const [channel, setChannel] = useState('chatChannel');
 
   const [client, setClient] = useState<IChatType | undefined>();
-  const [me, setMe] = useState<UserResponse | undefined>();
+  const [me, setMe] = useState<IChatUser | undefined>();
 
   const [chatChannel, setChatChannel] = useState<IChannelType | undefined>();
   const [questionsChannel, setQuestionsChannel] = useState<IChannelType | undefined>();
@@ -109,7 +102,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     [editMessage, comment]
   );
 
-  const messages: IResponseType[] = useMemo(() => {
+  const messages: IMessage[] = useMemo(() => {
     let tempMessages = currentChannel?.state.messages || [];
     tempMessages = tempMessages
       .slice()
@@ -138,7 +131,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             r[upvote] = r[upvote] || [];
             r[upvote].push(a);
             return r;
-          }, [] as IResponseType[][])
+          }, [] as IMessage[][])
       )
         .sort((i, j) =>
           (i[0].reaction_counts?.upvote || 0) < (j[0]?.reaction_counts?.upvote || 0) ||
@@ -152,7 +145,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     return tempMessages;
   }, [chatPending, currentChannel?.state.messages, questionPending, tabIndex]);
 
-  const pinned: FormatMessageResponse[] = useMemo(
+  const pinned: IMessage[] = useMemo(
     () =>
       messages
         ?.filter(m => m?.pinned)
@@ -283,7 +276,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       UnknownType,
       UnknownType,
       UnknownType,
-      IEventUser
+      IChatUser
     >(clientId, {
       timeout: 10000,
     });
@@ -413,7 +406,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
   }, [currentChannel]);
 
   const onTogglePinMessage = useCallback(
-    (item: FormatMessageResponse) => {
+    (item: IMessage) => {
       if (!client) {
         return;
       }
@@ -606,7 +599,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             onClearAllQuestions={
               tabIndex
                 ? () =>
-                    questionsChannel?.state.messages.map((m: FormatMessageResponse) => {
+                    questionsChannel?.state.messages.map((m: IMessage) => {
                       if (m.id !== undefined) {
                         client?.deleteMessage(m.id).catch(() => {});
                       }
