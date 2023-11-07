@@ -12,6 +12,7 @@ import {
 
 import { pin, vote, close, coach, team, edge, lifetime } from './svgs';
 import ListItemModal from './ListItemModal';
+import { IMessage } from './types';
 
 interface IListItem {
   editing?: boolean;
@@ -26,7 +27,7 @@ interface IListItem {
   pinned?: boolean;
   hidden?: boolean;
   center?: boolean;
-  item: any;
+  item: IMessage;
   onRemoveMessage?: () => void;
   onRemoveAllMessages?: () => void;
   onToggleBlockStudent?: () => void;

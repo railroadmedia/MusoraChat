@@ -16,7 +16,6 @@ interface IFloatingMenu {
   admin: boolean;
   onParticipants?: () => void;
   onBlockedStudents?: () => void;
-  ref: any;
   onClearAllQuestions?: () => void;
   appColor: string;
 }

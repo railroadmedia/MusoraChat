@@ -12,7 +12,7 @@ import {
 import FloatingMenu, { IFloatingMenuRef } from './FloatingMenu';
 import ListItem from './ListItem';
 import { arrowLeft } from './svgs';
-import { IChannelType } from './types';
+import { IChannelType, IChatUser } from './types';
 
 interface IParticipans {
   isDark: boolean;
@@ -83,11 +83,18 @@ const Participans: FunctionComponent<IParticipans> = props => {
   }, [channel, participantsStartEventListener, participantsStopEventListener]);
 
   const renderFLItem = useCallback(
-    ({ item }: { item: any }) => (
+    ({ item }: { item: IChatUser }) => (
       <ListItem
         isDark={isDark}
         appColor={appColor}
-        item={{ user: item }}
+        item={{
+          user: item,
+          id: '',
+          created_at: new Date(),
+          updated_at: new Date(),
+          pinned_at: new Date(),
+          status: '',
+        }}
         center
         onLayout={({ nativeEvent: ne }: LayoutChangeEvent) =>
           (itemHeight.current = ne.layout.height)

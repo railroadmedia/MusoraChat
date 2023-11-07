@@ -78,8 +78,8 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
   const [chatChannel, setChatChannel] = useState<IChannelType | undefined>();
   const [questionsChannel, setQuestionsChannel] = useState<IChannelType | undefined>();
 
-  const [questionPending, setQuestionPendingMsg] = useState<any>();
-  const [chatPending, setChatPendingMsg] = useState<any>();
+  const [questionPending, setQuestionPendingMsg] = useState<IMessage>();
+  const [chatPending, setChatPendingMsg] = useState<IMessage>();
   const [editMessage, setEditMessage] = useState<IMessage | undefined>();
 
   const commentTextInput = useRef<TextInput>(null);
@@ -108,10 +108,10 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       .slice()
       .reverse()
       .filter(m => m?.type !== 'deleted' && !m?.user?.banned);
-    if (tabIndex === 1) {
+    if (tabIndex === 1 && questionPending !== undefined) {
       tempMessages.unshift(questionPending);
     }
-    if (tabIndex === 0) {
+    if (tabIndex === 0 && chatPending !== undefined) {
       tempMessages.unshift(chatPending);
     }
     if (tabIndex === 0 || tabIndex === 1) {
@@ -339,14 +339,19 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           })
           .catch(() => {});
       } else {
-        const pendingMessage: any = {
+        const pendingMessage: IMessage = {
           user: clientUser,
           text: comment,
-          id: 1,
-          created_at: '',
+          id: '1',
+          created_at: new Date(),
+          updated_at: new Date(),
+          pinned_at: null,
+          status: 'draft',
         };
         if (tabIndex === 1) {
-          pendingMessage.own_reactions = [{ type: 'upvote', tbRemoved: true }];
+          pendingMessage.own_reactions = [
+            { type: 'upvote', tbRemoved: true, created_at: '', updated_at: '' },
+          ];
           pendingMessage.reaction_counts = { upvote: 1 };
           setQuestionPendingMsg(pendingMessage);
         }

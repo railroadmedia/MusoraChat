@@ -2,6 +2,7 @@ import React, { FunctionComponent, useState, useEffect, useRef, useCallback } fr
 import {
   ActivityIndicator,
   FlatList,
+  LayoutChangeEvent,
   StyleProp,
   StyleSheet,
   Text,
@@ -11,20 +12,21 @@ import {
 import FloatingMenu, { IFloatingMenuRef } from './FloatingMenu';
 import ListItem from './ListItem';
 import { arrowLeft } from './svgs';
+import { IChatType, IChatUser, IEventType } from './types';
 
 interface IBlockedusersProps {
   admin: boolean;
   appColor: string;
-  client?: any;
+  client?: IChatType;
   isDark: boolean;
   onBack?: () => void;
   onParticipants: () => void;
-  onUnblockStudent: (user: any) => void;
+  onUnblockStudent: (user: IChatUser) => void;
 }
 
 const BlockedUsers: FunctionComponent<IBlockedusersProps> = props => {
   const { client, onBack, isDark, appColor, admin, onParticipants, onUnblockStudent } = props;
-  const [blocked, setBlocked] = useState<{ [key: string]: any }>({});
+  const [blocked, setBlocked] = useState<{ [key: string]: IChatUser }>({});
 
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -32,12 +34,15 @@ const BlockedUsers: FunctionComponent<IBlockedusersProps> = props => {
   const styles = setStyles(isDark);
 
   const floatingMenu = useRef<IFloatingMenuRef>(null);
-  const flatList = useRef<any>(null);
+  const flatList = useRef<FlatList>(null);
   const itemHeight = useRef(0);
   const fListY = useRef(0);
 
   const toggleBanEventListener = useCallback(
-    ({ user, type }: { user: any; type: string }) => {
+    ({ user, type }: IEventType) => {
+      if (user === undefined) {
+        return;
+      }
       const tempBlocked = { ...blocked };
       if (type === 'user.banned') {
         tempBlocked[user.id] = user;
@@ -53,21 +58,32 @@ const BlockedUsers: FunctionComponent<IBlockedusersProps> = props => {
   useEffect(() => {
     client?.on(toggleBanEventListener);
     client
-      .queryUsers({ banned: true }, {}, { limit: 100, offset: 0 })
-      .then(({ users }: { users: any[] }) => {
+      ?.queryUsers({ banned: true }, {}, { limit: 100, offset: 0 })
+      .then(({ users }: { users: IChatUser[] }) => {
         const tempBlocked = { ...blocked };
-        users.map((b: any) => (tempBlocked[b.id] = b));
+        users.map((b: IChatUser) => (tempBlocked[b.id] = b));
         setLoading(false);
       });
     return client?.off(toggleBanEventListener);
   }, [blocked, client, toggleBanEventListener]);
 
+  const onToggleBlock = useCallback(
+    (item: IChatUser) => {
+      const tempBlocked = { ...blocked };
+      delete blocked[item.id];
+
+      setBlocked(tempBlocked);
+      onUnblockStudent(item);
+    },
+    [blocked, onUnblockStudent]
+  );
+
   const renderFLItem = useCallback(
-    ({ item }: { item: any }) => (
+    ({ item }: { item: IChatUser }) => (
       <ListItem
         isDark={isDark}
         appColor={appColor}
-        onLayout={({ nativeEvent: ne }: { nativeEvent: any }) =>
+        onLayout={({ nativeEvent: ne }: LayoutChangeEvent) =>
           (itemHeight.current = ne.layout.height)
         }
         item={{ user: item }}
@@ -75,26 +91,23 @@ const BlockedUsers: FunctionComponent<IBlockedusersProps> = props => {
         admin={admin}
         type={'banned'}
         onTap={() => floatingMenu.current?.close()}
-        onToggleBlockStudent={() => {
-          const tempBlocked = { ...blocked };
-          delete blocked[item.id];
-
-          setBlocked(tempBlocked);
-          onUnblockStudent(item);
-        }}
+        onToggleBlockStudent={() => onToggleBlock(item)}
       />
     ),
-    [admin, appColor, blocked, isDark, onUnblockStudent]
+    [admin, appColor, isDark, onToggleBlock]
   );
 
   const loadMore = useCallback(async () => {
+    if (client === undefined) {
+      return;
+    }
     setLoadingMore(true);
 
     await client
       .queryUsers({ banned: true }, {}, { limit: 100, offset: Object.keys(blocked).length })
-      .then(({ users }: { users: any }) => {
+      .then(({ users }: { users: IChatUser[] }) => {
         const tempBlocked = { ...blocked };
-        users.map((b: any) => (tempBlocked[b.id] = b));
+        users.map((b: IChatUser) => (tempBlocked[b.id] = b));
         setBlocked(tempBlocked);
       })
       .finally(() => setLoadingMore(false));
@@ -147,10 +160,10 @@ const BlockedUsers: FunctionComponent<IBlockedusersProps> = props => {
                   size='small'
                   color={isDark ? 'white' : 'black'}
                   animating={loadingMore}
-                  style={styles.activityIndicator}
+                  style={styles?.activityIndicator}
                 />
               }
-              ref={r => (flatList.current = r?.getNativeScrollRef())}
+              ref={flatList}
             />
           }
         </>
