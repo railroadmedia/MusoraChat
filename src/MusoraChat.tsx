@@ -12,7 +12,7 @@ import {
 
 import AndroidKeyboardAdjust from 'react-native-android-keyboard-adjust';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StreamChat, Message, UnknownType, LiteralStringForUnion } from 'stream-chat';
+import { StreamChat, UnknownType, LiteralStringForUnion } from 'stream-chat';
 import FloatingMenu, { IFloatingMenuRef } from './FloatingMenu';
 import Participants from './Participants';
 import BlockedUsers from './BlockedUsers';
@@ -80,7 +80,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
 
   const [questionPending, setQuestionPendingMsg] = useState<any>();
   const [chatPending, setChatPendingMsg] = useState<any>();
-  const [editMessage, setEditMessage] = useState<Message | undefined>();
+  const [editMessage, setEditMessage] = useState<IMessage | undefined>();
 
   const commentTextInput = useRef<TextInput>(null);
   const floatingMenu = useRef<IFloatingMenuRef>(null);
@@ -457,7 +457,11 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     [questionsChannel]
   );
 
-  const onEditMessage = useCallback(() => {}, []);
+  const onEditMessage = useCallback((item: IMessage) => {
+    setEditMessage(item);
+    setKeyboardVisible(true);
+    setComment(item.text || '');
+  }, []);
 
   const formatTypers = useMemo(() => {
     const typers = tabIndex ? questionsTypers : chatTypers;
