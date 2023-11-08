@@ -93,6 +93,7 @@ const BlockedUsers: FunctionComponent<IBlockedusersProps> = props => {
           updated_at: new Date(),
           pinned_at: new Date(),
           status: '',
+          type: 'regular',
         }}
         center
         admin={admin}

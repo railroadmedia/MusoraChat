@@ -12,7 +12,7 @@ import {
 
 import AndroidKeyboardAdjust from 'react-native-android-keyboard-adjust';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StreamChat, UnknownType, LiteralStringForUnion } from 'stream-chat';
+import { StreamChat } from 'stream-chat';
 import FloatingMenu, { IFloatingMenuRef } from './FloatingMenu';
 import Participants from './Participants';
 import BlockedUsers from './BlockedUsers';
@@ -22,7 +22,7 @@ import TextBoxModal from './TextBoxModal';
 import ResourcesItem from './ResourcesItem';
 import { Resource } from 'RNDownload';
 import ChatList, { IChatListRef } from './ChatList';
-import { IChannelType, IChatType, IEventType, IChatUser, IMessage } from './types';
+import { IChannelType, IChatType, IEventType, IChatUser, IMessage, MusoraChatType } from './types';
 
 interface IMusoraChat {
   appColor: string;
@@ -206,7 +206,13 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             const msgToAddReact = questionsChannel?.state.messages.find(m => m.id === message?.id);
             if (msgToAddReact) {
               msgToAddReact.own_reactions = [
-                { type: 'upvote', tbRemoved: true, created_at: '', updated_at: '' },
+                {
+                  type: 'upvote',
+                  tbRemoved: true,
+                  created_at: '',
+                  updated_at: '',
+                  message_id: msgToAddReact.id,
+                },
               ];
               msgToAddReact.reaction_counts = { upvote: 1 };
             }
@@ -269,15 +275,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       return;
     }
 
-    const tempClient = StreamChat.getInstance<
-      UnknownType,
-      UnknownType,
-      LiteralStringForUnion,
-      UnknownType,
-      UnknownType,
-      UnknownType,
-      IChatUser
-    >(clientId, {
+    const tempClient = StreamChat.getInstance<MusoraChatType>(clientId, {
       timeout: 10000,
     });
 
@@ -347,10 +345,17 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           updated_at: new Date(),
           pinned_at: null,
           status: 'draft',
+          type: 'regular',
         };
         if (tabIndex === 1) {
           pendingMessage.own_reactions = [
-            { type: 'upvote', tbRemoved: true, created_at: '', updated_at: '' },
+            {
+              type: 'upvote',
+              tbRemoved: true,
+              created_at: '',
+              updated_at: '',
+              message_id: pendingMessage.id,
+            },
           ];
           pendingMessage.reaction_counts = { upvote: 1 };
           setQuestionPendingMsg(pendingMessage);

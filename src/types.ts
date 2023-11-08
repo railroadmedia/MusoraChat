@@ -4,18 +4,21 @@ import {
   FormatMessageResponse,
   LiteralStringForUnion,
   StreamChat,
-  UnknownType,
+  UR,
   UserResponse,
 } from 'stream-chat';
 
-export type IMessage = FormatMessageResponse<
-  UnknownType,
-  UnknownType,
-  LiteralStringForUnion,
-  UnknownType,
-  UnknownType,
-  IChatUser
->;
+export type MusoraChatType = {
+  attachmentType: UR;
+  channelType: UR;
+  commandType: LiteralStringForUnion;
+  eventType: UR;
+  messageType: UR;
+  reactionType: UR;
+  userType: IChatUser;
+};
+
+export type IMessage = FormatMessageResponse<MusoraChatType>;
 
 export interface IChatUser extends UserResponse {
   accessLevelName?: string;
@@ -32,32 +35,8 @@ export interface IChatUser extends UserResponse {
   updated_at: string;
 }
 
-export type IEventType = Event<
-  UnknownType,
-  UnknownType,
-  string,
-  UnknownType,
-  UnknownType,
-  UnknownType,
-  IChatUser
->;
+export type IEventType = Event<MusoraChatType>;
 
-export type IChatType = StreamChat<
-  UnknownType,
-  UnknownType,
-  LiteralStringForUnion,
-  UnknownType,
-  UnknownType,
-  UnknownType,
-  IChatUser
->;
+export type IChatType = StreamChat<MusoraChatType>;
 
-export type IChannelType = Channel<
-  UnknownType,
-  UnknownType,
-  LiteralStringForUnion,
-  UnknownType,
-  UnknownType,
-  UnknownType,
-  IChatUser
->;
+export type IChannelType = Channel<MusoraChatType>;

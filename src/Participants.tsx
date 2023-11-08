@@ -94,6 +94,7 @@ const Participans: FunctionComponent<IParticipans> = props => {
           updated_at: new Date(),
           pinned_at: new Date(),
           status: '',
+          type: 'regular',
         }}
         center
         onLayout={({ nativeEvent: ne }: LayoutChangeEvent) =>
