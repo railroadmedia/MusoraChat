@@ -13,9 +13,9 @@ interface ITabMenu {
 }
 
 const tabs = [
-  {title: 'CHAT', icon: chat},
-  {title: 'QUESTIONS', icon: questions},
-  {title: 'RESOURCES', icon: resources}
+  { title: 'CHAT', icon: chat },
+  { title: 'QUESTIONS', icon: questions },
+  { title: 'RESOURCES', icon: resources },
 ];
 
 const IS_TABLET = DeviceInfo.isTablet();
@@ -27,54 +27,49 @@ const TabMenu: FunctionComponent<ITabMenu> = props => {
 
   return (
     <View style={styles.tabMenu}>
-      {tabs.map(({title, icon}, i) => {
+      {tabs.map(({ title, icon }, i) => {
         const color =
-          tabIndex === i ?
-            isDark ? 'white' : appColor :
-            isDark ? '#445F74' : '#879097';
-        return (
-        !showResources && i === 2 ?
-          <></> :
-        <TouchableOpacity
-          key={title}
-          onPress={() => onTabChange(i)}
-          style={[
-            styles.touchable,
-            {
-              borderBottomColor:
-              tabIndex === i ? (isDark ? 'white' : appColor) : 'transparent',
-              flexDirection: isLandscape ? 'column' : 'row',
-            }
-          ]}
-        >
-          {icon({height: ICON_SIZE, width: ICON_SIZE, fill: color})}
-          <Text style={[styles.text, {color: color}]}>
-            {title}
-          </Text>
-        </TouchableOpacity>
-      )})}
+          tabIndex === i ? (isDark ? 'white' : appColor) : isDark ? '#445F74' : '#879097';
+        return !showResources && i === 2 ? (
+          <View key={title}></View>
+        ) : (
+          <TouchableOpacity
+            key={title}
+            onPress={() => onTabChange(i)}
+            style={[
+              styles.touchable,
+              {
+                borderBottomColor: tabIndex === i ? (isDark ? 'white' : appColor) : 'transparent',
+                flexDirection: isLandscape ? 'column' : 'row',
+              },
+            ]}
+          >
+            {icon({ height: ICON_SIZE, width: ICON_SIZE, fill: color })}
+            <Text style={[styles.text, { color: color }]}>{title}</Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 };
 
-const styles: StyleProp<any> =
-  StyleSheet.create({
-    tabMenu: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    text: {
-      fontFamily: 'BebasNeue-Regular',
-      fontSize: ICON_SIZE,
-      marginLeft: 3,
-    },
-    touchable: {
-      padding: 10,
-      marginHorizontal: 10,
-      borderBottomWidth: 2,
-      justifyContent: 'center',
-      alignItems: 'center',
-    }
-  });
+const styles: StyleProp<any> = StyleSheet.create({
+  tabMenu: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  text: {
+    fontFamily: 'BebasNeue-Regular',
+    fontSize: ICON_SIZE,
+    marginLeft: 3,
+  },
+  touchable: {
+    padding: 10,
+    marginHorizontal: 10,
+    borderBottomWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
 
 export default TabMenu;

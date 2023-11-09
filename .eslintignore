@@ -1,0 +1,8 @@
+babel.config.js
+.eslintrc.js
+metro.config.js
+e2e/nodule_modules/
+e2e/allure-report/
+e2e/allure-results/
+e2e/
+ios/
