@@ -498,6 +498,32 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       : undefined;
   }, [client, questionsChannel, tabIndex]);
 
+  const onTextBoxPress = (): void => {
+    setKeyboardVisible(true);
+    floatingMenu.current?.close?.();
+  };
+
+  const onBlockedStudents = (): void => {
+    setShowParticipants(false);
+    setShowBlocked(true);
+  };
+
+  const onParticipantsTapped = (): void => {
+    setShowParticipants(true);
+    setShowBlocked(false);
+  };
+
+  const onTabChange = (i: number): void => {
+    setTabIndex(i);
+    setChannel(i === 1 ? 'questionsChannel' : 'chatChannel');
+    floatingMenu.current?.close();
+  };
+
+  const onTextChange = (text: string): void => {
+    currentChannel?.keystroke('').catch(() => {});
+    setComment(text);
+  };
+
   const renderChat = useCallback(
     () =>
       me === undefined || client === undefined ? (
@@ -522,10 +548,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           handleMessage={handleMessage}
           onScroll={onChatScroll}
           loadMore={loadMore}
-          onTextBoxPress={() => {
-            setKeyboardVisible(true);
-            floatingMenu.current?.close?.();
-          }}
+          onTextBoxPress={onTextBoxPress}
           comment={comment}
           onRemoveAllMessages={onRemoveAllMessages}
           onToggleBlockStudent={onToggleBlockStudent}
@@ -583,10 +606,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           onlineUsers={tabIndex ? questionsViewers : chatViewers}
           channel={currentChannel}
           onBack={() => setShowParticipants(false)}
-          onBlockedStudents={() => {
-            setShowParticipants(false);
-            setShowBlocked(true);
-          }}
+          onBlockedStudents={onBlockedStudents}
         />
       ) : showBlocked ? (
         <BlockedUsers
@@ -595,10 +615,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           admin={me?.role === 'admin'}
           client={client}
           onBack={() => setShowBlocked(false)}
-          onParticipants={() => {
-            setShowParticipants(true);
-            setShowBlocked(false);
-          }}
+          onParticipants={onParticipantsTapped}
           onUnblockStudent={unblockedUser => onToggleBlockStudent(unblockedUser)}
         />
       ) : (
@@ -609,11 +626,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             tabIndex={tabIndex}
             isLandscape={isLandscape}
             showResources={!!resources.length}
-            onTabChange={i => {
-              setTabIndex(i);
-              setChannel(i === 1 ? 'questionsChannel' : 'chatChannel');
-              floatingMenu.current?.close();
-            }}
+            onTabChange={onTabChange}
           />
           {tabIndex === 2 ? (
             <FlatList
@@ -641,10 +654,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             isDark={isDark}
             ref={commentTextInput}
             onSubmitEditing={handleMessage}
-            onChangeText={changedComment => {
-              currentChannel?.keystroke('').catch(() => {});
-              setComment(changedComment);
-            }}
+            onChangeText={onTextChange}
             comment={comment}
             icon={
               <>
