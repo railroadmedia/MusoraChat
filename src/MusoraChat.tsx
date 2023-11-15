@@ -85,6 +85,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
   const commentTextInput = useRef<TextInput>(null);
   const floatingMenu = useRef<IFloatingMenuRef>(null);
   const fListY = useRef<number>(0);
+  const [trigger, setTrigger] = useState(false);
 
   useEffect(() => {
     if (!isiOS) {
@@ -249,12 +250,9 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       }
       // This triggers re-rendering when receiving a message.
       // Because it was not seeing the inner state of the channels.
-      const c = channel;
-      setChannel('');
-      setChannel(c);
+      setTrigger(!trigger);
     },
     [
-      channel,
       chatId,
       chatTypers,
       client?.user,
@@ -263,6 +261,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       questionsId,
       questionsTypers,
       tabIndex,
+      trigger,
       user.id,
     ]
   );
