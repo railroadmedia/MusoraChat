@@ -295,8 +295,13 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             { message_limit: 200 }
           )
           .then(channels => {
-            setChatChannel(channels.find(c => c.id === chatId));
-            setQuestionsChannel(channels.find(c => c.id === questionsId));
+            const chat = channels.find(c => c.id === chatId);
+            const questions = channels.find(c => c.id === questionsId);
+            setChatChannel(chat);
+            setQuestionsChannel(questions);
+            setChatViewers(chat?.state.watcher_count || 0);
+            setQuestionsViewers(questions?.state.watcher_count || 0);
+
             tempClient.on(clientEventListener);
           })
           .finally(() => {
