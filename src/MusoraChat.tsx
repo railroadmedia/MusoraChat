@@ -426,13 +426,14 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       }
       if (item.pinned) {
         client.unpinMessage(item).catch(() => {});
+      } else {
+        chatChannel?.state.messages
+          ?.filter(m => m.pinned && m.deleted_at === null)
+          .sort((i, j) => ((i.pinned_at || Date.now()) < (j.pinned_at || Date.now()) ? 1 : -1))
+          .slice(1)
+          .map(m => client.unpinMessage(m).catch(() => {}));
+        client.pinMessage(item).catch(() => {});
       }
-      chatChannel?.state.messages
-        ?.filter(m => m.pinned)
-        .sort((i, j) => ((i.pinned_at || 0) < (j.pinned_at || 0) ? 1 : -1))
-        .slice(1)
-        .map(m => client.unpinMessage(m).catch(() => {}));
-      client.pinMessage(item).catch(() => {});
     },
     [chatChannel?.state.messages, client]
   );
