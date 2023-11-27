@@ -143,7 +143,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
         .map(m => m.sort((i, j) => (i.created_at > j?.created_at ? -1 : 1)))
         .flat();
     }
-    return tempMessages;
+    return [...tempMessages];
   }, [chatPending, currentChannel?.state.messages, questionPending, tabIndex]);
 
   const pinned: IMessage[] = useMemo(
@@ -434,6 +434,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           .map(m => client.unpinMessage(m).catch(() => {}));
         client.pinMessage(item).catch(() => {});
       }
+      setTrigger(!trigger);
     },
     [chatChannel?.state.messages, client]
   );
