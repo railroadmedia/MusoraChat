@@ -436,7 +436,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       }
       setTrigger(!trigger);
     },
-    [chatChannel?.state.messages, client]
+    [chatChannel?.state.messages, client, trigger]
   );
 
   const onToggleHidden = useCallback(
