@@ -71,6 +71,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const [hidden, setHidden] = useState<string[]>([]);
   const [channel, setChannel] = useState('chatChannel');
+  const [messages, setMessages] = useState([] as IMessage[]);
 
   const [client, setClient] = useState<IChatType | undefined>();
   const [me, setMe] = useState<IChatUser | undefined>();
@@ -93,6 +94,14 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     }
   }, []);
 
+  useEffect(() => {
+    if (tabIndex) {
+      setMessages(getMessages(questionsChannel));
+    } else {
+      setMessages(getMessages(chatChannel));
+    }
+  }, [channel])
+
   const currentChannel = useMemo(
     () => (channel === 'questionsChannel' ? questionsChannel : chatChannel),
     [channel, chatChannel, questionsChannel]
@@ -103,8 +112,8 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     [editMessage, comment]
   );
 
-  const messages: IMessage[] = useMemo(() => {
-    let tempMessages = currentChannel?.state.messages || [];
+  const getMessages = (channel = currentChannel) => {
+    let tempMessages = channel?.state.messages || [];
     tempMessages = tempMessages
       .slice()
       .reverse()
@@ -143,8 +152,8 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
         .map(m => m.sort((i, j) => (i.created_at > j?.created_at ? -1 : 1)))
         .flat();
     }
-    return [...tempMessages];
-  }, [chatPending, currentChannel?.state.messages, questionPending, tabIndex]);
+    return tempMessages;
+  };
 
   const pinned: IMessage[] = useMemo(
     () =>
@@ -156,8 +165,9 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     [messages]
   );
 
-  const clientEventListener = useCallback(
+  const clientEventListener = 
     ({ type, user: eventUser, watcher_count, channel_id, reaction, message }: IEventType) => {
+      console.log('event', type, eventUser?.displayName);
       if (type === 'health.check') {
         return;
       }
@@ -191,9 +201,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       }
       if (type === 'message.new') {
         if (eventUser?.id !== user.id) {
-          if (fListY.current) {
-            messages[messages.length - 1].new = true;
-          }
+            setMessages(messages => [message as unknown as IMessage, ...messages])
           if (tabIndex) {
             const msg = questionsChannel?.state.messages.find(m => m.id === message?.id);
             if (msg) {
@@ -203,6 +211,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             }
           }
         } else {
+          setMessages(messages => [message as unknown as IMessage, ...messages]);
           if (tabIndex) {
             const msgToAddReact = questionsChannel?.state.messages.find(m => m.id === message?.id);
             if (msgToAddReact) {
@@ -248,23 +257,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           setChatTypers(Array.from(ct));
         }
       }
-      // This triggers re-rendering when receiving a message.
-      // Because it was not seeing the inner state of the channels.
-      setTrigger(!trigger);
-    },
-    [
-      chatId,
-      chatTypers,
-      client?.user,
-      messages,
-      questionsChannel?.state.messages,
-      questionsId,
-      questionsTypers,
-      tabIndex,
-      trigger,
-      user.id,
-    ]
-  );
+    };
 
   const chatRef = useRef<IChatListRef>(null);
 
@@ -292,7 +285,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
               id: { $in: [chatId, questionsId] },
             },
             [{}],
-            { message_limit: 200 }
+            { message_limit: 50 }
           )
           .then(channels => {
             const chat = channels.find(c => c.id === chatId);
@@ -301,7 +294,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             setQuestionsChannel(questions);
             setChatViewers(chat?.state.watcher_count || 0);
             setQuestionsViewers(questions?.state.watcher_count || 0);
-
+            setMessages(getMessages(chat) || []);
             tempClient.on(clientEventListener);
           })
           .finally(() => {
@@ -413,6 +406,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     if (!currentChannel) {
       return;
     }
+    console.log('loading more');
     setLoadingMore(true);
     currentChannel?.query({ messages: { limit: 50 } }).finally(() => {
       setLoadingMore(false);
