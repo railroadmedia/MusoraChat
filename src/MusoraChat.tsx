@@ -545,7 +545,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           pinned={pinned}
           messages={messages}
           hidden={hidden}
-          client={client}
+          clientId={clientId}
           onMessageTap={() => floatingMenu.current?.close?.()}
           handleMessage={handleMessage}
           onScroll={onChatScroll}
@@ -566,6 +566,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       appColor,
       chatViewers,
       client,
+      clientId,
       comment,
       editToBeCancelled,
       formatTypers,

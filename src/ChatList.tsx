@@ -21,7 +21,8 @@ import {
 } from 'react-native';
 import { arrowDown, sendMsg, x } from './svgs';
 import ListItem from './ListItem';
-import { IChatType, IChatUser, IMessage } from './types';
+import { IChatUser, IMessage, MusoraChatType } from './types';
+import { StreamChat } from 'stream-chat';
 
 interface IChatList {
   appColor: string;
@@ -40,7 +41,7 @@ interface IChatList {
   pinned: IMessage[];
   messages: IMessage[];
   hidden: string[];
-  client: IChatType;
+  clientId: string;
 
   onMessageTap: () => void;
   handleMessage: () => void;
@@ -92,7 +93,7 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
       pinned,
       messages,
       hidden,
-      client,
+      clientId,
 
       comment,
 
@@ -109,6 +110,10 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
 
     const flatList = useRef<FlatList<IMessage>>(null);
     const fListY = useRef(0);
+
+    const client = StreamChat.getInstance<MusoraChatType>(clientId, {
+      timeout: 10000,
+    });
 
     useImperativeHandle(ref, () => ({
       scrollDown: () => flatList.current?.scrollToOffset({ offset: 0, animated: true }),
