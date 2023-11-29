@@ -22,7 +22,7 @@ import TextBoxModal from './TextBoxModal';
 import ResourcesItem from './ResourcesItem';
 import { Resource } from 'RNDownload';
 import ChatList, { IChatListRef } from './ChatList';
-import { IChannelType, IChatType, IEventType, IChatUser, IMessage, MusoraChatType } from './types';
+import { IChannelType, IEventType, IChatUser, IMessage, MusoraChatType } from './types';
 
 interface IMusoraChat {
   appColor: string;
@@ -72,7 +72,9 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
   const [hidden, setHidden] = useState<string[]>([]);
   const [channel, setChannel] = useState('chatChannel');
 
-  const [client, setClient] = useState<IChatType | undefined>();
+  const client = StreamChat.getInstance<MusoraChatType>(clientId, {
+    timeout: 10000,
+  });
   const [me, setMe] = useState<IChatUser | undefined>();
 
   const [chatChannel, setChatChannel] = useState<IChannelType | undefined>();
@@ -270,23 +272,17 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
 
   useEffect(() => {
     // SETUP
-    if (client) {
+    if (client.userID) {
       return;
     }
 
-    const tempClient = StreamChat.getInstance<MusoraChatType>(clientId, {
-      timeout: 10000,
-    });
-
-    setClient(tempClient);
-
     // Connect user
-    tempClient
+    client
       .connectUser(user, user.gsToken)
       .then(connection => {
         setMe(connection?.me);
         // Cet channels
-        tempClient
+        client
           .queryChannels(
             {
               id: { $in: [chatId, questionsId] },
@@ -302,7 +298,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             setChatViewers(chat?.state.watcher_count || 0);
             setQuestionsViewers(questions?.state.watcher_count || 0);
 
-            tempClient.on(clientEventListener);
+            client.on(clientEventListener);
           })
           .finally(() => {
             setLoading(false);
@@ -312,8 +308,8 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
 
     return () => {
       // Disconnect User
-      tempClient.disconnectUser().catch(() => {});
-      tempClient.off(clientEventListener);
+      client.disconnectUser().catch(() => {});
+      client.off(clientEventListener);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId]);
