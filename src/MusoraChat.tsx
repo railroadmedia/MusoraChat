@@ -23,6 +23,7 @@ import ResourcesItem from './ResourcesItem';
 import { Resource } from 'RNDownload';
 import ChatList, { IChatListRef } from './ChatList';
 import { IChannelType, IEventType, IChatUser, IMessage, MusoraChatType } from './types';
+import { formatTypers } from './helper';
 
 interface IMusoraChat {
   appColor: string;
@@ -475,19 +476,10 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     setComment(item.text || '');
   }, []);
 
-  const formatTypers = useMemo(() => {
-    const typers = tabIndex ? questionsTypers : chatTypers;
-    if (!typers.length) {
-      return '';
-    }
-    const firstTwo = typers.slice(0, 2).join(typers.length < 3 ? ' And ' : ', ');
-    const remaining = typers.slice(2, typers.length);
-    const remainingStr = remaining.length
-      ? ` And ${remaining.length} Other${remaining.length === 1 ? '' : 's'}`
-      : '';
-    const endString = ` ${typers.length < 2 ? 'Is' : 'Are'} Typing`;
-    return firstTwo + remainingStr + endString;
-  }, [chatTypers, questionsTypers, tabIndex]);
+  const typers = useMemo(
+    () => formatTypers(tabIndex ? questionsTypers : chatTypers),
+    [chatTypers, questionsTypers, tabIndex]
+  );
 
   const onClearAllQuestions = useCallback(() => {
     tabIndex
@@ -536,7 +528,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           isDark={isDark}
           tabIndex={tabIndex}
           viewers={tabIndex ? questionsViewers : chatViewers}
-          typers={formatTypers}
+          typers={typers}
           editing={editToBeCancelled}
           loadingMore={loadingMore}
           showScrollToTop={showScrollToTop}
@@ -569,7 +561,6 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       clientId,
       comment,
       editToBeCancelled,
-      formatTypers,
       handleMessage,
       hidden,
       isDark,
@@ -590,6 +581,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       questionsViewers,
       showScrollToTop,
       tabIndex,
+      typers,
     ]
   );
 
