@@ -281,7 +281,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       .connectUser(user, user.gsToken)
       .then(connection => {
         setMe(connection?.me);
-        // Cet channels
+        // Set channels
         client
           .queryChannels(
             {
