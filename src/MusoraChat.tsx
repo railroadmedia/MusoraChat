@@ -12,7 +12,7 @@ import {
 
 import AndroidKeyboardAdjust from 'react-native-android-keyboard-adjust';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StreamChat } from 'stream-chat';
+import { MessageResponse, StreamChat } from 'stream-chat';
 import FloatingMenu, { IFloatingMenuRef } from './FloatingMenu';
 import Participants from './Participants';
 import BlockedUsers from './BlockedUsers';
@@ -106,7 +106,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     [editMessage, comment]
   );
 
-  const messages: IMessage[] = useMemo(() => {
+  const formatMessages = useCallback(() => {
     let tempMessages = currentChannel?.state.messages || [];
     tempMessages = tempMessages
       .slice()
@@ -148,6 +148,12 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     }
     return [...tempMessages];
   }, [chatPending, currentChannel?.state.messages, questionPending, tabIndex]);
+
+  useEffect(() => {
+    setMessages(formatMessages());
+  }, [formatMessages]);
+
+  const [messages, setMessages] = useState<IMessage[]>([]);
 
   const pinned: IMessage[] = useMemo(
     () =>
@@ -459,15 +465,46 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     },
     [client]
   );
+
+  const updateMessage = useCallback(
+    (message: MessageResponse<MusoraChatType>) => {
+      const tempMsg = [...messages];
+      const msgIdx = tempMsg.findIndex(m => m.id === message.id);
+      if (msgIdx !== -1) {
+        tempMsg[msgIdx] = {
+          ...tempMsg[msgIdx],
+          reaction_counts: message.reaction_counts,
+          own_reactions: message.own_reactions,
+        };
+        setMessages(tempMsg);
+      }
+    },
+    [messages]
+  );
+
   const onToggleReact = useCallback(
     (item: IMessage) => {
       if (item.own_reactions?.some(r => r.type === 'upvote')) {
-        questionsChannel?.deleteReaction(item.id, 'upvote').catch(() => {});
+        questionsChannel
+          ?.deleteReaction(item.id, 'upvote')
+          .then(response => {
+            if (response?.message?.id) {
+              updateMessage(response.message);
+            }
+          })
+          .catch(() => {});
       } else {
-        questionsChannel?.sendReaction(item.id, { type: 'upvote' }).catch(() => {});
+        questionsChannel
+          ?.sendReaction(item.id, { type: 'upvote' })
+          .then(response => {
+            if (response?.message?.id) {
+              updateMessage(response.message);
+            }
+          })
+          .catch(() => {});
       }
     },
-    [questionsChannel]
+    [questionsChannel, updateMessage]
   );
 
   const onEditMessage = useCallback((item: IMessage) => {
