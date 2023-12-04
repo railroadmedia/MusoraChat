@@ -106,52 +106,55 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     [editMessage, comment]
   );
 
-  const formatMessages = useCallback(() => {
-    let tempMessages = currentChannel?.state.messages || [];
-    tempMessages = tempMessages
-      .slice()
-      .reverse()
-      .filter(m => m?.type !== 'deleted' && !m?.user?.banned);
-    if (tabIndex === 1 && questionPending !== undefined) {
-      tempMessages.unshift(questionPending);
-    }
-    if (tabIndex === 0 && chatPending !== undefined) {
-      tempMessages.unshift(chatPending);
-    }
-    if (tabIndex === 0 || tabIndex === 1) {
-      tempMessages = Object.values(
-        tempMessages
+  const formatMessages = useCallback(
+    (newMessages: IMessage[]) => {
+      let tempMessages = [...newMessages];
+      tempMessages = tempMessages
+        .slice()
+        .reverse()
+        .filter(m => m?.type !== 'deleted' && !m?.user?.banned);
+      if (tabIndex === 1 && questionPending !== undefined) {
+        tempMessages.unshift(questionPending);
+      }
+      if (tabIndex === 0 && chatPending !== undefined) {
+        tempMessages.unshift(chatPending);
+      }
+      if (tabIndex === 0 || tabIndex === 1) {
+        tempMessages = Object.values(
+          tempMessages
+            .sort((i, j) =>
+              (i.reaction_counts?.upvote || 0) < (j?.reaction_counts?.upvote || 0) ||
+              i.reaction_counts?.upvote === undefined
+                ? -1
+                : 1
+            )
+            .reduce((r, a) => {
+              const upvote = a?.reaction_counts?.upvote || 0;
+              if (a === undefined) {
+                return r;
+              }
+              r[upvote] = r[upvote] || [];
+              r[upvote].push(a);
+              return r;
+            }, [] as IMessage[][])
+        )
           .sort((i, j) =>
-            (i.reaction_counts?.upvote || 0) < (j?.reaction_counts?.upvote || 0) ||
-            i.reaction_counts?.upvote === undefined
+            (i[0].reaction_counts?.upvote || 0) < (j[0]?.reaction_counts?.upvote || 0) ||
+            i[0].reaction_counts?.upvote === undefined
               ? -1
               : 1
           )
-          .reduce((r, a) => {
-            const upvote = a?.reaction_counts?.upvote || 0;
-            if (a === undefined) {
-              return r;
-            }
-            r[upvote] = r[upvote] || [];
-            r[upvote].push(a);
-            return r;
-          }, [] as IMessage[][])
-      )
-        .sort((i, j) =>
-          (i[0].reaction_counts?.upvote || 0) < (j[0]?.reaction_counts?.upvote || 0) ||
-          i[0].reaction_counts?.upvote === undefined
-            ? -1
-            : 1
-        )
-        .map(m => m.sort((i, j) => (i.created_at > j?.created_at ? -1 : 1)))
-        .flat();
-    }
-    return [...tempMessages];
-  }, [chatPending, currentChannel?.state.messages, questionPending, tabIndex]);
+          .map(m => m.sort((i, j) => (i.created_at > j?.created_at ? -1 : 1)))
+          .flat();
+      }
+      return [...tempMessages];
+    },
+    [chatPending, questionPending, tabIndex]
+  );
 
   useEffect(() => {
-    setMessages(formatMessages());
-  }, [formatMessages]);
+    setMessages(formatMessages(currentChannel?.state.messages || []));
+  }, [currentChannel?.state.messages, formatMessages]);
 
   const [messages, setMessages] = useState<IMessage[]>([]);
 
@@ -476,10 +479,10 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           reaction_counts: message.reaction_counts,
           own_reactions: message.own_reactions,
         };
-        setMessages(tempMsg);
+        setMessages(formatMessages(tempMsg));
       }
     },
-    [messages]
+    [formatMessages, messages]
   );
 
   const onToggleReact = useCallback(
