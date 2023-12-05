@@ -168,11 +168,31 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     [messages]
   );
 
+  const updateMessage = useCallback(
+    (message: MessageResponse<MusoraChatType>) => {
+      const tempMsg = [...messages];
+      const msgIdx = tempMsg.findIndex(m => m.id === message.id);
+      if (msgIdx !== -1) {
+        tempMsg[msgIdx] = {
+          ...tempMsg[msgIdx],
+          reaction_counts: message.reaction_counts,
+          own_reactions: message.own_reactions,
+        };
+      } else {
+        const newMsg = { ...message, created_at: new Date(), updated_at: new Date() } as IMessage;
+        tempMsg.unshift(newMsg);
+      }
+      setMessages(formatMessages(tempMsg));
+    },
+    [formatMessages, messages]
+  );
+
   const handleNewMessage = useCallback(
     (message: MessageResponse<MusoraChatType>, eventUser: UserResponse<MusoraChatType>) => {
       if (eventUser?.id !== user.id) {
-        if (fListY.current) {
-          messages[messages.length - 1].new = true;
+        if (fListY.current !== null) {
+          message.new = true;
+          updateMessage(message);
         }
         if (tabIndex) {
           const msg = questionsChannel?.state.messages.find(m => m.id === message?.id);
@@ -203,7 +223,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
         }
       }
     },
-    [messages, questionsChannel?.state.messages, tabIndex, user.id]
+    [questionsChannel?.state.messages, tabIndex, updateMessage, user.id]
   );
 
   const clientEventListener = useCallback(
@@ -473,22 +493,6 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       client.deleteMessage(id).catch(() => {});
     },
     [client]
-  );
-
-  const updateMessage = useCallback(
-    (message: MessageResponse<MusoraChatType>) => {
-      const tempMsg = [...messages];
-      const msgIdx = tempMsg.findIndex(m => m.id === message.id);
-      if (msgIdx !== -1) {
-        tempMsg[msgIdx] = {
-          ...tempMsg[msgIdx],
-          reaction_counts: message.reaction_counts,
-          own_reactions: message.own_reactions,
-        };
-        setMessages(formatMessages(tempMsg));
-      }
-    },
-    [formatMessages, messages]
   );
 
   const onToggleReact = useCallback(
