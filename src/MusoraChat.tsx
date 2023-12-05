@@ -12,7 +12,7 @@ import {
 
 import AndroidKeyboardAdjust from 'react-native-android-keyboard-adjust';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MessageResponse, StreamChat } from 'stream-chat';
+import { MessageResponse, StreamChat, UserResponse } from 'stream-chat';
 import FloatingMenu, { IFloatingMenuRef } from './FloatingMenu';
 import Participants from './Participants';
 import BlockedUsers from './BlockedUsers';
@@ -168,6 +168,44 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     [messages]
   );
 
+  const handleNewMessage = useCallback(
+    (message: MessageResponse<MusoraChatType>, eventUser: UserResponse<MusoraChatType>) => {
+      if (eventUser?.id !== user.id) {
+        if (fListY.current) {
+          messages[messages.length - 1].new = true;
+        }
+        if (tabIndex) {
+          const msg = questionsChannel?.state.messages.find(m => m.id === message?.id);
+          if (msg) {
+            msg.reaction_counts = {
+              upvote: 1,
+            };
+          }
+        }
+      } else {
+        if (tabIndex) {
+          const msgToAddReact = questionsChannel?.state.messages.find(m => m.id === message?.id);
+          if (msgToAddReact) {
+            msgToAddReact.own_reactions = [
+              {
+                type: 'upvote',
+                tbRemoved: true,
+                created_at: '',
+                updated_at: '',
+                message_id: msgToAddReact.id,
+              },
+            ];
+            msgToAddReact.reaction_counts = { upvote: 1 };
+          }
+          setQuestionPendingMsg(undefined);
+        } else {
+          setChatPendingMsg(undefined);
+        }
+      }
+    },
+    [messages, questionsChannel?.state.messages, tabIndex, user.id]
+  );
+
   const clientEventListener = useCallback(
     ({ type, user: eventUser, watcher_count, channel_id, reaction, message }: IEventType) => {
       if (type === 'health.check') {
@@ -201,39 +239,8 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       ) {
         client.user.banned = eventUser.banned;
       }
-      if (type === 'message.new') {
-        if (eventUser?.id !== user.id) {
-          if (fListY.current) {
-            messages[messages.length - 1].new = true;
-          }
-          if (tabIndex) {
-            const msg = questionsChannel?.state.messages.find(m => m.id === message?.id);
-            if (msg) {
-              msg.reaction_counts = {
-                upvote: 1,
-              };
-            }
-          }
-        } else {
-          if (tabIndex) {
-            const msgToAddReact = questionsChannel?.state.messages.find(m => m.id === message?.id);
-            if (msgToAddReact) {
-              msgToAddReact.own_reactions = [
-                {
-                  type: 'upvote',
-                  tbRemoved: true,
-                  created_at: '',
-                  updated_at: '',
-                  message_id: msgToAddReact.id,
-                },
-              ];
-              msgToAddReact.reaction_counts = { upvote: 1 };
-            }
-            setQuestionPendingMsg(undefined);
-          } else {
-            setChatPendingMsg(undefined);
-          }
-        }
+      if (type === 'message.new' && message !== undefined && eventUser !== undefined) {
+        handleNewMessage(message, eventUser);
       }
       if (tabIndex && type === 'reaction.new' && reaction?.user_id === eventUser?.id) {
         const upvotingMessage = questionsChannel?.state.messages.find(
@@ -267,14 +274,13 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     [
       chatId,
       chatTypers,
-      client?.user,
-      messages,
+      client.user,
+      handleNewMessage,
       questionsChannel?.state.messages,
       questionsId,
       questionsTypers,
       tabIndex,
       trigger,
-      user.id,
     ]
   );
 
