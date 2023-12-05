@@ -262,6 +262,9 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       if (type === 'message.new' && message !== undefined && eventUser !== undefined) {
         handleNewMessage(message, eventUser);
       }
+      if (type === 'message.deleted' && message !== undefined && eventUser !== undefined) {
+        setMessages(formatMessages([...messages].filter(m => m.id !== message.id)));
+      }
       if (tabIndex && type === 'reaction.new' && reaction?.user_id === eventUser?.id) {
         const upvotingMessage = questionsChannel?.state.messages.find(
           m => m.id === reaction?.message_id
@@ -287,20 +290,18 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           setChatTypers(Array.from(ct));
         }
       }
-      // This triggers re-rendering when receiving a message.
-      // Because it was not seeing the inner state of the channels.
-      setTrigger(!trigger);
     },
     [
       chatId,
       chatTypers,
       client.user,
+      formatMessages,
       handleNewMessage,
+      messages,
       questionsChannel?.state.messages,
       questionsId,
       questionsTypers,
       tabIndex,
-      trigger,
     ]
   );
 
