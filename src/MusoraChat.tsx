@@ -12,7 +12,7 @@ import {
 
 import AndroidKeyboardAdjust from 'react-native-android-keyboard-adjust';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StreamChat } from 'stream-chat';
+import { MessageResponse, StreamChat, UserResponse } from 'stream-chat';
 import FloatingMenu, { IFloatingMenuRef } from './FloatingMenu';
 import Participants from './Participants';
 import BlockedUsers from './BlockedUsers';
@@ -22,7 +22,8 @@ import TextBoxModal from './TextBoxModal';
 import ResourcesItem from './ResourcesItem';
 import { Resource } from 'RNDownload';
 import ChatList, { IChatListRef } from './ChatList';
-import { IChannelType, IChatType, IEventType, IChatUser, IMessage, MusoraChatType } from './types';
+import { IChannelType, IEventType, IChatUser, IMessage, MusoraChatType } from './types';
+import { formatTypers } from './helper';
 
 interface IMusoraChat {
   appColor: string;
@@ -72,7 +73,9 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
   const [hidden, setHidden] = useState<string[]>([]);
   const [channel, setChannel] = useState('chatChannel');
 
-  const [client, setClient] = useState<IChatType | undefined>();
+  const client = StreamChat.getInstance<MusoraChatType>(clientId, {
+    timeout: 10000,
+  });
   const [me, setMe] = useState<IChatUser | undefined>();
 
   const [chatChannel, setChatChannel] = useState<IChannelType | undefined>();
@@ -103,48 +106,57 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     [editMessage, comment]
   );
 
-  const messages: IMessage[] = useMemo(() => {
-    let tempMessages = currentChannel?.state.messages || [];
-    tempMessages = tempMessages
-      .slice()
-      .reverse()
-      .filter(m => m?.type !== 'deleted' && !m?.user?.banned);
-    if (tabIndex === 1 && questionPending !== undefined) {
-      tempMessages.unshift(questionPending);
-    }
-    if (tabIndex === 0 && chatPending !== undefined) {
-      tempMessages.unshift(chatPending);
-    }
-    if (tabIndex === 0 || tabIndex === 1) {
-      tempMessages = Object.values(
-        tempMessages
+  const formatMessages = useCallback(
+    (newMessages: IMessage[]) => {
+      let tempMessages = [...newMessages];
+      tempMessages = tempMessages
+        .slice()
+        .reverse()
+        .filter(m => m?.type !== 'deleted' && !m?.user?.banned);
+      if (tabIndex === 1 && questionPending !== undefined) {
+        tempMessages.unshift(questionPending);
+      }
+      if (tabIndex === 0 && chatPending !== undefined) {
+        tempMessages.unshift(chatPending);
+      }
+      if (tabIndex === 0 || tabIndex === 1) {
+        tempMessages = Object.values(
+          tempMessages
+            .sort((i, j) =>
+              (i.reaction_counts?.upvote || 0) < (j?.reaction_counts?.upvote || 0) ||
+              i.reaction_counts?.upvote === undefined
+                ? -1
+                : 1
+            )
+            .reduce((r, a) => {
+              const upvote = a?.reaction_counts?.upvote || 0;
+              if (a === undefined) {
+                return r;
+              }
+              r[upvote] = r[upvote] || [];
+              r[upvote].push(a);
+              return r;
+            }, [] as IMessage[][])
+        )
           .sort((i, j) =>
-            (i.reaction_counts?.upvote || 0) < (j?.reaction_counts?.upvote || 0) ||
-            i.reaction_counts?.upvote === undefined
+            (i[0].reaction_counts?.upvote || 0) < (j[0]?.reaction_counts?.upvote || 0) ||
+            i[0].reaction_counts?.upvote === undefined
               ? -1
               : 1
           )
-          .reduce((r, a) => {
-            const upvote = a?.reaction_counts?.upvote || 0;
-            if (a === undefined) {
-              return r;
-            }
-            r[upvote] = r[upvote] || [];
-            r[upvote].push(a);
-            return r;
-          }, [] as IMessage[][])
-      )
-        .sort((i, j) =>
-          (i[0].reaction_counts?.upvote || 0) < (j[0]?.reaction_counts?.upvote || 0) ||
-          i[0].reaction_counts?.upvote === undefined
-            ? -1
-            : 1
-        )
-        .map(m => m.sort((i, j) => (i.created_at > j?.created_at ? -1 : 1)))
-        .flat();
-    }
-    return tempMessages;
-  }, [chatPending, currentChannel?.state.messages, questionPending, tabIndex]);
+          .map(m => m.sort((i, j) => (i.created_at > j?.created_at ? -1 : 1)))
+          .flat();
+      }
+      return [...tempMessages];
+    },
+    [chatPending, questionPending, tabIndex]
+  );
+
+  useEffect(() => {
+    setMessages(formatMessages(currentChannel?.state.messages || []));
+  }, [currentChannel?.state.messages, formatMessages]);
+
+  const [messages, setMessages] = useState<IMessage[]>([]);
 
   const pinned: IMessage[] = useMemo(
     () =>
@@ -154,6 +166,64 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
         .sort((i, j) => ((i.pinned_at || 0) < (j.pinned_at || 0) ? -1 : 1)),
 
     [messages]
+  );
+
+  const updateMessage = useCallback(
+    (message: MessageResponse<MusoraChatType>) => {
+      const tempMsg = [...messages];
+      const msgIdx = tempMsg.findIndex(m => m.id === message.id);
+      if (msgIdx !== -1) {
+        tempMsg[msgIdx] = {
+          ...tempMsg[msgIdx],
+          reaction_counts: message.reaction_counts,
+          own_reactions: message.own_reactions,
+        };
+      } else {
+        const newMsg = { ...message, created_at: new Date(), updated_at: new Date() } as IMessage;
+        tempMsg.unshift(newMsg);
+      }
+      setMessages(formatMessages(tempMsg));
+    },
+    [formatMessages, messages]
+  );
+
+  const handleNewMessage = useCallback(
+    (message: MessageResponse<MusoraChatType>, eventUser: UserResponse<MusoraChatType>) => {
+      if (eventUser?.id !== user.id) {
+        if (fListY.current !== null) {
+          message.new = true;
+          updateMessage(message);
+        }
+        if (tabIndex) {
+          const msg = questionsChannel?.state.messages.find(m => m.id === message?.id);
+          if (msg) {
+            msg.reaction_counts = {
+              upvote: 1,
+            };
+          }
+        }
+      } else {
+        if (tabIndex) {
+          const msgToAddReact = questionsChannel?.state.messages.find(m => m.id === message?.id);
+          if (msgToAddReact) {
+            msgToAddReact.own_reactions = [
+              {
+                type: 'upvote',
+                tbRemoved: true,
+                created_at: '',
+                updated_at: '',
+                message_id: msgToAddReact.id,
+              },
+            ];
+            msgToAddReact.reaction_counts = { upvote: 1 };
+          }
+          setQuestionPendingMsg(undefined);
+        } else {
+          setChatPendingMsg(undefined);
+        }
+      }
+    },
+    [questionsChannel?.state.messages, tabIndex, updateMessage, user.id]
   );
 
   const clientEventListener = useCallback(
@@ -189,39 +259,11 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       ) {
         client.user.banned = eventUser.banned;
       }
-      if (type === 'message.new') {
-        if (eventUser?.id !== user.id) {
-          if (fListY.current) {
-            messages[messages.length - 1].new = true;
-          }
-          if (tabIndex) {
-            const msg = questionsChannel?.state.messages.find(m => m.id === message?.id);
-            if (msg) {
-              msg.reaction_counts = {
-                upvote: 1,
-              };
-            }
-          }
-        } else {
-          if (tabIndex) {
-            const msgToAddReact = questionsChannel?.state.messages.find(m => m.id === message?.id);
-            if (msgToAddReact) {
-              msgToAddReact.own_reactions = [
-                {
-                  type: 'upvote',
-                  tbRemoved: true,
-                  created_at: '',
-                  updated_at: '',
-                  message_id: msgToAddReact.id,
-                },
-              ];
-              msgToAddReact.reaction_counts = { upvote: 1 };
-            }
-            setQuestionPendingMsg(undefined);
-          } else {
-            setChatPendingMsg(undefined);
-          }
-        }
+      if (type === 'message.new' && message !== undefined && eventUser !== undefined) {
+        handleNewMessage(message, eventUser);
+      }
+      if (type === 'message.deleted' && message !== undefined && eventUser !== undefined) {
+        setMessages(formatMessages([...messages].filter(m => m.id !== message.id)));
       }
       if (tabIndex && type === 'reaction.new' && reaction?.user_id === eventUser?.id) {
         const upvotingMessage = questionsChannel?.state.messages.find(
@@ -248,21 +290,18 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           setChatTypers(Array.from(ct));
         }
       }
-      // This triggers re-rendering when receiving a message.
-      // Because it was not seeing the inner state of the channels.
-      setTrigger(!trigger);
     },
     [
       chatId,
       chatTypers,
-      client?.user,
+      client.user,
+      formatMessages,
+      handleNewMessage,
       messages,
       questionsChannel?.state.messages,
       questionsId,
       questionsTypers,
       tabIndex,
-      trigger,
-      user.id,
     ]
   );
 
@@ -270,23 +309,17 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
 
   useEffect(() => {
     // SETUP
-    if (client) {
+    if (client.userID) {
       return;
     }
 
-    const tempClient = StreamChat.getInstance<MusoraChatType>(clientId, {
-      timeout: 10000,
-    });
-
-    setClient(tempClient);
-
     // Connect user
-    tempClient
+    client
       .connectUser(user, user.gsToken)
       .then(connection => {
         setMe(connection?.me);
-        // Cet channels
-        tempClient
+        // Set channels
+        client
           .queryChannels(
             {
               id: { $in: [chatId, questionsId] },
@@ -295,9 +328,14 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
             { message_limit: 200 }
           )
           .then(channels => {
-            setChatChannel(channels.find(c => c.id === chatId));
-            setQuestionsChannel(channels.find(c => c.id === questionsId));
-            tempClient.on(clientEventListener);
+            const chat = channels.find(c => c.id === chatId);
+            const questions = channels.find(c => c.id === questionsId);
+            setChatChannel(chat);
+            setQuestionsChannel(questions);
+            setChatViewers(chat?.state.watcher_count || 0);
+            setQuestionsViewers(questions?.state.watcher_count || 0);
+
+            client.on(clientEventListener);
           })
           .finally(() => {
             setLoading(false);
@@ -307,8 +345,8 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
 
     return () => {
       // Disconnect User
-      tempClient.disconnectUser().catch(() => {});
-      tempClient.off(clientEventListener);
+      client.disconnectUser().catch(() => {});
+      client.off(clientEventListener);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId]);
@@ -421,15 +459,17 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       }
       if (item.pinned) {
         client.unpinMessage(item).catch(() => {});
+      } else {
+        chatChannel?.state.messages
+          ?.filter(m => m.pinned && m.deleted_at === null)
+          .sort((i, j) => ((i.pinned_at || Date.now()) < (j.pinned_at || Date.now()) ? 1 : -1))
+          .slice(1)
+          .map(m => client.unpinMessage(m).catch(() => {}));
+        client.pinMessage(item).catch(() => {});
       }
-      chatChannel?.state.messages
-        ?.filter(m => m.pinned)
-        .sort((i, j) => ((i.pinned_at || 0) < (j.pinned_at || 0) ? 1 : -1))
-        .slice(1)
-        .map(m => client.unpinMessage(m).catch(() => {}));
-      client.pinMessage(item).catch(() => {});
+      setTrigger(!trigger);
     },
-    [chatChannel?.state.messages, client]
+    [chatChannel?.state.messages, client, trigger]
   );
 
   const onToggleHidden = useCallback(
@@ -455,15 +495,30 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     },
     [client]
   );
+
   const onToggleReact = useCallback(
     (item: IMessage) => {
       if (item.own_reactions?.some(r => r.type === 'upvote')) {
-        questionsChannel?.deleteReaction(item.id, 'upvote').catch(() => {});
+        questionsChannel
+          ?.deleteReaction(item.id, 'upvote')
+          .then(response => {
+            if (response?.message?.id) {
+              updateMessage(response.message);
+            }
+          })
+          .catch(() => {});
       } else {
-        questionsChannel?.sendReaction(item.id, { type: 'upvote' }).catch(() => {});
+        questionsChannel
+          ?.sendReaction(item.id, { type: 'upvote' })
+          .then(response => {
+            if (response?.message?.id) {
+              updateMessage(response.message);
+            }
+          })
+          .catch(() => {});
       }
     },
-    [questionsChannel]
+    [questionsChannel, updateMessage]
   );
 
   const onEditMessage = useCallback((item: IMessage) => {
@@ -472,19 +527,10 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
     setComment(item.text || '');
   }, []);
 
-  const formatTypers = useMemo(() => {
-    const typers = tabIndex ? questionsTypers : chatTypers;
-    if (!typers.length) {
-      return '';
-    }
-    const firstTwo = typers.slice(0, 2).join(typers.length < 3 ? ' And ' : ', ');
-    const remaining = typers.slice(2, typers.length);
-    const remainingStr = remaining.length
-      ? ` And ${remaining.length} Other${remaining.length === 1 ? '' : 's'}`
-      : '';
-    const endString = ` ${typers.length < 2 ? 'Is' : 'Are'} Typing`;
-    return firstTwo + remainingStr + endString;
-  }, [chatTypers, questionsTypers, tabIndex]);
+  const typers = useMemo(
+    () => formatTypers(tabIndex ? questionsTypers : chatTypers),
+    [chatTypers, questionsTypers, tabIndex]
+  );
 
   const onClearAllQuestions = useCallback(() => {
     tabIndex
@@ -533,7 +579,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           isDark={isDark}
           tabIndex={tabIndex}
           viewers={tabIndex ? questionsViewers : chatViewers}
-          typers={formatTypers}
+          typers={typers}
           editing={editToBeCancelled}
           loadingMore={loadingMore}
           showScrollToTop={showScrollToTop}
@@ -542,7 +588,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
           pinned={pinned}
           messages={messages}
           hidden={hidden}
-          client={client}
+          clientId={clientId}
           onMessageTap={() => floatingMenu.current?.close?.()}
           handleMessage={handleMessage}
           onScroll={onChatScroll}
@@ -563,9 +609,9 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       appColor,
       chatViewers,
       client,
+      clientId,
       comment,
       editToBeCancelled,
-      formatTypers,
       handleMessage,
       hidden,
       isDark,
@@ -586,6 +632,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
       questionsViewers,
       showScrollToTop,
       tabIndex,
+      typers,
     ]
   );
 
