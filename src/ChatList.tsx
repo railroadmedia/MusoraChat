@@ -21,8 +21,7 @@ import {
 } from 'react-native';
 import { arrowDown, sendMsg, x } from './svgs';
 import ListItem from './ListItem';
-import { IChatUser, IMessage, MusoraChatType } from './types';
-import { StreamChat } from 'stream-chat';
+import { IChatUser, IMessage } from './types';
 
 interface IChatList {
   appColor: string;
@@ -41,7 +40,6 @@ interface IChatList {
   pinned: IMessage[];
   messages: IMessage[];
   hidden: string[];
-  clientId: string;
 
   onMessageTap: () => void;
   handleMessage: () => void;
@@ -51,7 +49,7 @@ interface IChatList {
   onTextBoxPress?: () => void;
 
   comment: string;
-
+  onRemoveMessage: (message: IMessage) => void;
   onRemoveAllMessages: (userId: string) => void;
   onToggleBlockStudent: (user?: IChatUser | null) => void;
   onTogglePinMessage: (message: IMessage) => void;
@@ -93,10 +91,9 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
       pinned,
       messages,
       hidden,
-      clientId,
 
       comment,
-
+      onRemoveMessage,
       onRemoveAllMessages,
       onToggleBlockStudent,
       onTogglePinMessage,
@@ -110,10 +107,6 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
 
     const flatList = useRef<FlatList<IMessage>>(null);
     const fListY = useRef(0);
-
-    const client = StreamChat.getInstance<MusoraChatType>(clientId, {
-      timeout: 10000,
-    });
 
     useImperativeHandle(ref, () => ({
       scrollDown: () => flatList.current?.scrollToOffset({ offset: 0, animated: true }),
@@ -149,7 +142,7 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
           pinned={isPinned}
           hidden={isPinned ? (hidden.find(id => id === item.id) ? true : false) : undefined}
           item={item}
-          onRemoveMessage={() => client.deleteMessage(item.id || '').catch(() => {})}
+          onRemoveMessage={() => onRemoveMessage(item)}
           onRemoveAllMessages={() => onRemoveAllMessages(item.user?.id || '')}
           onToggleBlockStudent={() => onToggleBlockStudent(item.user)}
           onTogglePinMessage={() => onTogglePinMessage(item)}
@@ -161,7 +154,6 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
       ),
       [
         appColor,
-        client,
         editing,
         hidden,
         isDark,
@@ -172,6 +164,7 @@ const ChatList: ForwardRefExoticComponent<IChatList & RefAttributes<IChatListRef
         onMessageLayout,
         onMessageTap,
         onRemoveAllMessages,
+        onRemoveMessage,
         onToggleBlockStudent,
         onToggleHidden,
         onTogglePinMessage,
