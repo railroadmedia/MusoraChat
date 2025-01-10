@@ -3,12 +3,12 @@
   "version": "0.0.1",
   "private": true,
   "peerDependencies": {
-    "react": "18.2.0",
-    "react-native": "0.73.6",
+    "react": "18.3.1",
+    "react-native": "0.76.6",
     "react-native-android-keyboard-adjust": "^1.2.0",
     "react-native-device-info": "^11.0.0",
     "react-native-safe-area-context": "^3.4.1",
-    "RNDownload": "git+https://github.com/railroadmedia/RNDownload.git#master-musora-app",
+    "RNDownload": "git+https://github.com/railroadmedia/RNDownload.git#RN-update",
     "stream-chat": "^8.14.1"
   },
   "devDependencies": {
