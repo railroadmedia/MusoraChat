@@ -8,7 +8,7 @@
     "react-native-android-keyboard-adjust": "^1.2.0",
     "react-native-device-info": "^11.0.0",
     "react-native-safe-area-context": "^5.1.0",
-    "RNDownload": "git+https://github.com/railroadmedia/RNDownload.git#RN-update",
+    "RNDownload": "git+https://github.com/railroadmedia/RNDownload.git#RN-update-2",
     "stream-chat": "^8.14.1"
   },
   "devDependencies": {
