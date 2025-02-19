@@ -340,7 +340,7 @@ const MusoraChat: FunctionComponent<IMusoraChat> = props => {
               id: { $in: [chatId, questionsId] },
             },
             [{}],
-            { message_limit: 200 }
+            { message_limit: 20 }
           )
           .then(channels => {
             const chat = channels.find(c => c.id === chatId);
